@@ -1,0 +1,34 @@
+I made a new version of the model (v13). I streamlined the code with simpler comments, removed sliders from the
+interface that are not user-friendly, removed part of the update-bird-estimates procedure that weighted estimates
+based on vegetation-volume, modified bird behavior-related procedures, and changed the change-vegetation procedure.
+
+I removed previous comments, old variables, and old testing procedures in the code. I also simplified some
+comments.
+
+Almost all of the sliders on the interface are for testing. I removed the dispersal-distance slider, locking it to a
+distance of up to half of the landscape. I also removed the bird-love-distribution slider from the interface, as it should
+be set to the empirical value anyways.
+
+Previously I thought that I should add "if people have more vegetation, they should estimate more birds" to
+the model; however, I now believe it just adds unneccessary complexity irrelevant to the noticing nature cycle. So,
+I removed it and kept the calculation just based on the birds that they see (with some inaccuracy).
+
+In the previous version, birds were too successful and the population would grow infinitely. They had a bug in which 
+after they settle, there were no cases in which they would again disperse. I entirely changed the way this procedure
+was written and it is now written much cleaner, with the parents and the offspring each having their own dispersal
+procedure. The major changes are: offspring migrate up to half the max distance of the landscape, parents have a
+very small chance to disperse to nearby patches every breeding season, the death rate increased to 50%, and the
+birth rate is 100% chance for 1 offspring.
+
+The change-vegetation procedure previously only allowed for one change per tick. Now, patches may plant or remove
+up to 3 layers at a time.
+
+In addition to all of this, I created output files containing the variables for every patch on the landscape. I put the
+dataset through the t-SNE machine learning algorithm to determine if patches had similarities based on the
+values of their variables. I found that patches seem to group by their bird-estimates, carrying capacity, and 
+bird-density. I also did this experiment for different values of max-bird to see if the variable made a change,
+but there were similar trends at all values.
+
+My next plans are to run ensemble techniques on the model output, such as random forest and XGBoost, 
+to determine the relative importance for various outcomes of specific patches, such as a high bird-love value, or high 
+bird-density.
