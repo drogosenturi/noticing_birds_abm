@@ -139,3 +139,20 @@ ax = sns.scatterplot(data=data,x="tsne1",y='tsne2',hue='veg-vol-cnd',
 legend = ax.legend(loc='upper right', fontsize = '10', frameon=True, 
                    framealpha=0.3, facecolor='0.7', title='Vegetation',
                    title_fontsize='10',borderpad=0.3)
+
+# with k-means
+from sklearn.cluster import KMeans
+from sklearn import metrics
+kmeans = KMeans(n_clusters = 3)
+fit = kmeans.fit(X)
+data["labels"] = kmeans.labels_
+centroids = kmeans.cluster_centers_
+silhouette = metrics.silhouette_score(X, data["labels"],metric='sqeuclidean')
+print("score: ",silhouette)
+
+palette3 = ["#e5f5f9","#99d8c9","#2ca25f"]
+ax = sns.scatterplot(data=data,x="tsne1",y='tsne2',hue='labels',
+                palette=palette,edgecolor= "0.4") #str 0.0 - 1.0 is grayscale
+legend = ax.legend(loc='upper right', fontsize = '10', frameon=True, 
+                   framealpha=0.3, facecolor='0.7', title='K Clusters',
+                   title_fontsize='10',borderpad=0.3)
