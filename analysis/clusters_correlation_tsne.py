@@ -68,6 +68,64 @@ bird-dens | yard-bird = 78%
 
 '''
 # bird-density related to estimate (0.7) bird-love related to veg (0.6)
+palette = sns.color_palette("rocket")
+# PCA
+from sklearn.decomposition import PCA
+pca = PCA(n_components=3) # used 6 initially
+pcafit = pca.fit(data_scaled)
+perc = pcafit.explained_variance_ratio_
+print("explained variance: ",perc)
+pca_trans = pca.fit_transform(data_scaled)
+# plot to show PCA feature importance
+perc_x = range(1,len(perc)+1)
+plt.plot(perc_x,perc,"ro--")
+plt.xlabel("Number of Components")
+plt.ylabel("Explained variance")
+plt.show()
+
+# PCA plot in 3D since 3 components are important
+data["PC1"] = pca_trans[:,0]
+data["PC2"] = pca_trans[:,1]
+data["PC3"] = pca_trans[:,2]
+##bird density
+fig = plt.figure()
+ax = fig.add_subplot(projection='3d')
+scatter = ax.scatter(data["PC1"],data["PC2"],data["PC3"], c=data["bird-density"],
+           cmap="crest")
+ax.legend(*scatter.legend_elements(),title='bird density')
+ax.set_xlabel("PC1")
+ax.set_ylabel("PC2")
+ax.set_zlabel("PC3")
+plt.show()
+## attitudes/vegetation difficult to interpret no grouping pattern
+fig = plt.figure()
+ax = fig.add_subplot(projection='3d')
+scatter = ax.scatter(data["PC1"],data["PC2"],data["PC3"],
+                     c=data["yard-bird-estimate"], cmap="crest")
+ax.legend(*scatter.legend_elements(),title='bird estimate')
+ax.set_xlabel("PC1")
+ax.set_ylabel("PC2")
+ax.set_zlabel("PC3")
+plt.show()
+
+# PC feature importance
+##PC1
+x_ticks = ["Vegetation volume", "Habitat", "K", "Bird density","Attitudes",
+           "Bird population estimate"]
+groups = ['PC1','PC2','PC3']
+df = pd.DataFrame(pcafit.components_, index=groups,columns=x_ticks)
+#make it long so that seaborn can plot it
+df_long = df.reset_index().melt(id_vars='index',
+                                var_name='variable',
+                                value_name='Explained variance')
+df_long = df_long.rename(columns={'index': 'PCA'})
+ax = sns.barplot(data=df_long,x="variable",y='Explained variance',
+                 hue='PCA',palette='mako')
+plt.xlabel('')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.legend(loc='lower right')
+plt.show()
 
 # t-sne
 tsne = TSNE(perplexity=40,max_iter=1000, learning_rate=500).fit_transform(data_scaled)
@@ -143,7 +201,7 @@ legend = ax.legend(loc='upper right', fontsize = '10', frameon=True,
 # with k-means
 from sklearn.cluster import KMeans
 from sklearn import metrics
-kmeans = KMeans(n_clusters = 3)
+kmeans = KMeans(n_clusters = 2)
 fit = kmeans.fit(X)
 data["labels"] = kmeans.labels_
 centroids = kmeans.cluster_centers_
@@ -152,7 +210,7 @@ print("score: ",silhouette)
 
 palette3 = ["#e5f5f9","#99d8c9","#2ca25f"]
 ax = sns.scatterplot(data=data,x="tsne1",y='tsne2',hue='labels',
-                palette=palette,edgecolor= "0.4") #str 0.0 - 1.0 is grayscale
+                palette=palette2,edgecolor= "0.4") #str 0.0 - 1.0 is grayscale
 legend = ax.legend(loc='upper right', fontsize = '10', frameon=True, 
                    framealpha=0.3, facecolor='0.7', title='K Clusters',
                    title_fontsize='10',borderpad=0.3)
