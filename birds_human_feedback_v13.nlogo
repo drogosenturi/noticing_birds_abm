@@ -175,7 +175,7 @@ end
 
 to calculate-bird-density
   ask patches [
-    set bird-density count turtles-here
+    set bird-density count turtles-here with [settled? = 1]
   ]
 end
 
@@ -280,8 +280,8 @@ end
 GRAPHICS-WINDOW
 807
 10
-2718
-1922
+2715
+1919
 -1
 -1
 19.03333333333334
@@ -1189,6 +1189,27 @@ NetLogo 6.4.0
       <value value="0.05"/>
     </enumeratedValueSet>
     <steppedValueSet variable="max-bird" first="3" step="1" last="5"/>
+    <enumeratedValueSet variable="mean-vegetation-volume">
+      <value value="3"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="clustering_2" repetitions="10" runMetricsEveryStep="true">
+    <setup>setup
+export-world (word "start" behaviorspace-run-number".csv")</setup>
+    <go>go</go>
+    <postRun>export-world (word "end" behaviorspace-run-number".csv")</postRun>
+    <exitCondition>ticks = 500</exitCondition>
+    <metric>count turtles</metric>
+    <metric>mean [vegetation-volume] of patches</metric>
+    <metric>mean [bird-density] of patches</metric>
+    <metric>mean [bird-love] of patches</metric>
+    <metric>mean [yard-bird-estimate] of patches</metric>
+    <enumeratedValueSet variable="change-chance">
+      <value value="0.05"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-bird">
+      <value value="3"/>
+    </enumeratedValueSet>
     <enumeratedValueSet variable="mean-vegetation-volume">
       <value value="3"/>
     </enumeratedValueSet>
