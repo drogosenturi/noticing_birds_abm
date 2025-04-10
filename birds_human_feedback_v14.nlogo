@@ -9,7 +9,7 @@ globals
   ;habitat-radius ;; determines how many patches are part of a bird's habitat
   ;dispersal-distance ;; how far a bird can move from its original patch
   ;mean-vegetation-volume ;; empirical value = 2.9, used in setup only
-  ;max-bird ;; sets the maximum amount of birds possible on a single patch - used to calculate max-bird-density
+  ;max-bird ;; sets the maximum amount of birds possible on a single patch - used to calculate max-bird-density - set to 3
   ;love-distribution ;; distribution of bird-love on setup based on empirical data from Belaire
   ;change-chance ;; the number the random-float change chance is compared to. Correlates to % chance to change bird love
   increase-count ;; keep track of bird-love increase (remove in final)
@@ -25,6 +25,7 @@ patches-own
   bird-love ;; residents' perception of birds deciding whether they will actively add vegetation for them or not, range from 0-10
   yard-bird-estimate ;; resident estimate of amount of birds on patch
   veg-change-list ;; list of last 10 veg changes, 0 for no change, 1 for pos change, -1 for neg change
+  veg-changes ;; sum of veg-change-list, showing whether patch veg is changing positively or negative for past 5 years
 ]
 
 turtles-own
@@ -56,14 +57,14 @@ end
 to assign-vegetation
   ;; normal assign procedure
   loop [
-      set vegetation-volume round random-exponential mean-vegetation-volume
+      set vegetation-volume round random-exponential 3 ;; random-exponential 3 matches empirical distribution of 1000 chicago yards
       if vegetation-volume <= 16 [ stop ]
     ]
 end
 
 to calculate-habitat
     set habitat sum [ vegetation-volume ] of neighbors
-    set max-bird-density round ((habitat / (16 * count neighbors)) * max-bird)
+    set max-bird-density round ((habitat / (16 * count neighbors)) * 3) ;; 3 is decided value of max-bird
     set bird-density 0
     set veg-change-list [] ;; create empty list for later
 end
@@ -264,7 +265,8 @@ end
 to update-habitat
   ask patches [
     set habitat sum [ vegetation-volume ] of neighbors ;patches in-radius habitat-radius
-    set max-bird-density round ((habitat / (16 * count neighbors)) * max-bird)
+    set max-bird-density round ((habitat / (16 * count neighbors)) * 3) ;; 3 is decided value of max-bird
+    set veg-changes sum veg-change-list ; record simple metric for + or - veg change over past 5 years
   ]
 end
 
@@ -276,7 +278,7 @@ to visual ;; colors/labels for testing
   ]
   ;; testing colors
   ask patches [
-    set pcolor scale-color 66 vegetation-volume 16 0
+    ;set pcolor scale-color 66 vegetation-volume 16 0
     ;set pcolor scale-color violet sum veg-change-list 5 -5 ;; color for veg list
     ;set pcolor scale-color gray bird-love 10 0
   ]
@@ -285,8 +287,8 @@ end
 GRAPHICS-WINDOW
 820
 10
-1551
-742
+3720
+2911
 -1
 -1
 28.92
@@ -300,9 +302,9 @@ GRAPHICS-WINDOW
 1
 1
 0
-24
+99
 0
-24
+99
 1
 1
 1
@@ -310,11 +312,11 @@ ticks
 30.0
 
 BUTTON
-182
-851
-243
-884
-setup X
+1615
+303
+1729
+336
+setup LOOP
 let x 0\nwhile [x < 1000000] [setup set x x + 1]
 NIL
 1
@@ -353,21 +355,6 @@ count turtles
 17
 1
 11
-
-SLIDER
-173
-683
-346
-716
-mean-vegetation-volume
-mean-vegetation-volume
-1
-16
-3.0
-1
-1
-NIL
-HORIZONTAL
 
 TEXTBOX
 277
@@ -447,21 +434,6 @@ NIL
 NIL
 NIL
 1
-
-SLIDER
-431
-678
-603
-711
-max-bird
-max-bird
-0
-15
-3.0
-1
-1
-NIL
-HORIZONTAL
 
 BUTTON
 14
@@ -641,10 +613,10 @@ NIL
 1
 
 PLOT
-367
-723
-804
-880
+376
+642
+813
+799
 bird-density by patch
 NIL
 NIL
@@ -670,13 +642,13 @@ count patches
 11
 
 TEXTBOX
-553
-643
-703
-673
-OLD OR WANT CONSTANT VALUE
+183
+684
+333
+729
+NEED TO TEST. 25% CHANGE SEEMS TO GIVE REALISTIC TIMESCALE
 12
-0.0
+14.0
 1
 
 @#$#@#$#@
@@ -1203,20 +1175,14 @@ NetLogo 6.4.0
 export-world (word "start" behaviorspace-run-number".csv")</setup>
     <go>go</go>
     <postRun>export-world (word "end" behaviorspace-run-number".csv")</postRun>
-    <exitCondition>ticks = 500</exitCondition>
+    <exitCondition>ticks = 100</exitCondition>
     <metric>count turtles</metric>
     <metric>mean [vegetation-volume] of patches</metric>
     <metric>mean [bird-density] of patches</metric>
     <metric>mean [bird-love] of patches</metric>
     <metric>mean [yard-bird-estimate] of patches</metric>
     <enumeratedValueSet variable="change-chance">
-      <value value="0.05"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="max-bird">
-      <value value="3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mean-vegetation-volume">
-      <value value="3"/>
+      <value value="0.25"/>
     </enumeratedValueSet>
   </experiment>
 </experiments>
