@@ -1,7 +1,3 @@
-;; ver 12: This version is relying on the quartile idea for bird-love that produces a bimodal distribution at it's end point
-;; version only contains final procedures and not homogeneous testing procedures
-;; Cleaning up procedures
-
 extensions [rnd]
 
 globals
@@ -9,7 +5,7 @@ globals
   ;habitat-radius ;; determines how many patches are part of a bird's habitat
   ;dispersal-distance ;; how far a bird can move from its original patch
   ;mean-vegetation-volume ;; empirical value = 2.9, used in setup only
-  ;max-bird ;; sets the maximum amount of birds possible on a single patch - used to calculate max-bird-density
+  ;max-bird ;; sets the maximum amount of birds possible on a single patch - used to calculate max-bird-density - set to 3
   ;love-distribution ;; distribution of bird-love on setup based on empirical data from Belaire
   ;change-chance ;; the number the random-float change chance is compared to. Correlates to % chance to change bird love
   increase-count ;; keep track of bird-love increase (remove in final)
@@ -25,17 +21,20 @@ patches-own
   bird-love ;; residents' perception of birds deciding whether they will actively add vegetation for them or not, range from 0-10
   yard-bird-estimate ;; resident estimate of amount of birds on patch
   veg-change-list ;; list of last 10 veg changes, 0 for no change, 1 for pos change, -1 for neg change
+  veg-changes ;; sum of veg-change-list, showing whether patch veg is changing positively or negative for past 5 years
 ]
 
 turtles-own
 [
   settled? ;; value of 0 or 1 based on whether or not a bird is on suitable habitat
+  age
 ]
 
 to setup
   clear-all
   setup-patches
   reset-ticks
+  go
 end
 
 to setup-patches
@@ -54,14 +53,14 @@ end
 to assign-vegetation
   ;; normal assign procedure
   loop [
-      set vegetation-volume round random-exponential mean-vegetation-volume
+      set vegetation-volume round random-exponential 3 ;; random-exponential 3 matches empirical distribution of 1000 chicago yards
       if vegetation-volume <= 16 [ stop ]
     ]
 end
 
 to calculate-habitat
     set habitat sum [ vegetation-volume ] of neighbors
-    set max-bird-density round ((habitat / (16 * count neighbors)) * max-bird)
+    set max-bird-density round ((habitat / (16 * count neighbors)) * 3) ;; 3 is decided value of max-bird
     set bird-density 0
     set veg-change-list [] ;; create empty list for later
 end
@@ -70,7 +69,8 @@ to setup-birds ;; patches sprout turtles up to max-bird-dens
   sprout one-of (range 0 (max-bird-density + 1)) [
       set size .5
       set color white
-      set settled? 1
+    set settled? 1
+    set age random 4
     ]
 end
 
@@ -104,7 +104,7 @@ to go
   change-vegetation ;; add or remove vegetation based on values of bird-love and bird estimates
   update-habitat ;; calculate habitat after changing vegetation
   visual ;; colors/labels for testing
-  ifelse count turtles = 0 or ticks >= 500 [
+  ifelse count turtles = 0 or ticks >= max-tick [
     stop
   ]
   [tick]
@@ -155,20 +155,22 @@ end
 
 to kill-birds
   ask turtles [
-    if settled? = 0 [
+    if age > 3 [die]
+    ifelse settled? = 0 [
       die
     ]
-    if settled? = 1 and random-float 1 < 0.50 [die]
+    [ set age age + 1 ]
   ]
 end
 
 to birds-reproduce
   ask turtles [
-    hatch 1 [
+    hatch offspring [
       set shape "circle"
       set size 0.25
       set color blue
       set settled? 0
+      set age 0
     ]
   ]
 end
@@ -192,7 +194,7 @@ end
 
 to change-bird-love
   ;; calculate value that is 1/4 of patches
-  let quartile round (count patches * 0.25)
+  let quartile round (count patches * quartile-size)
   let patch-list sort-on [yard-bird-estimate] patches ;; ascending order list of patches based on estimate
   ;; subset top and bottom 25%
   let bottom-patches sublist patch-list 0 (quartile - 1)
@@ -218,8 +220,8 @@ to change-vegetation ;; add vegetation based on bird-love, with 5% max chance to
     ;; will increase or decrease veg based on calculated chance, and if they get past the random number draw
     ;; if no increase or decrease, record 0 on list for no veg change
 
-    let increase-chance bird-love * .005
-    let decrease-chance bird-love * -.005 + 0.05
+    let increase-chance bird-love * veg-chance
+    let decrease-chance bird-love * (veg-chance * (-1)) + (10 * veg-chance)
 
     if increase-chance > random-float 1 and vegetation-volume < 16 [
       let number random 3
@@ -259,7 +261,8 @@ end
 to update-habitat
   ask patches [
     set habitat sum [ vegetation-volume ] of neighbors ;patches in-radius habitat-radius
-    set max-bird-density round ((habitat / (16 * count neighbors)) * max-bird)
+    set max-bird-density round ((habitat / (16 * count neighbors)) * 3) ;; 3 is decided value of max-bird
+    set veg-changes sum veg-change-list ; record simple metric for + or - veg change over past 5 years
   ]
 end
 
@@ -272,19 +275,19 @@ to visual ;; colors/labels for testing
   ;; testing colors
   ask patches [
     ;set pcolor scale-color 66 vegetation-volume 16 0
-    ;set pcolor scale-color violet sum veg-change-list 5 -5 ;; color for veg list
+    set pcolor scale-color violet sum veg-change-list 5 -5 ;; color for veg list
     ;set pcolor scale-color gray bird-love 10 0
   ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-807
-10
-1290
-494
+613
+14
+1119
+521
 -1
 -1
-19.03333333333334
+19.92
 1
 10
 1
@@ -305,11 +308,11 @@ ticks
 30.0
 
 BUTTON
-182
-851
-243
-884
-setup X
+1719
+311
+1833
+344
+setup LOOP
 let x 0\nwhile [x < 1000000] [setup set x x + 1]
 NIL
 1
@@ -322,10 +325,10 @@ NIL
 1
 
 BUTTON
-89
-615
-152
-648
+733
+540
+796
+573
 NIL
 go
 NIL
@@ -339,30 +342,15 @@ NIL
 1
 
 MONITOR
-353
-340
-429
-385
+1684
+54
+1760
+99
 Birds
 count turtles
 17
 1
 11
-
-SLIDER
-173
-683
-346
-716
-mean-vegetation-volume
-mean-vegetation-volume
-1
-16
-3.0
-1
-1
-NIL
-HORIZONTAL
 
 TEXTBOX
 277
@@ -375,10 +363,10 @@ love, yard, neighbors, actual, veg
 1
 
 PLOT
-439
-332
-807
-488
+2
+473
+294
+717
 mean-vegetation over time
 time
 mean veg volume
@@ -393,10 +381,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot mean [vegetation-volume] of patches"
 
 BUTTON
-1404
-338
-1508
-371
+1721
+347
+1825
+380
 NIL
 birds-explore
 NIL
@@ -410,10 +398,10 @@ NIL
 1
 
 BUTTON
-1397
-377
-1516
-410
+1715
+383
+1834
+416
 NIL
 birds-reproduce\n
 NIL
@@ -427,10 +415,10 @@ NIL
 1
 
 BUTTON
-1416
-417
-1491
-450
+1736
+418
+1811
+451
 die :(
 kill-birds\ncalculate-bird-density
 NIL
@@ -443,26 +431,11 @@ NIL
 NIL
 1
 
-SLIDER
-431
-678
-603
-711
-max-bird
-max-bird
-0
-15
-3.0
-1
-1
-NIL
-HORIZONTAL
-
 BUTTON
-14
-653
-84
-686
+658
+578
+728
+611
 go 500
 ifelse ticks <= 500 [go] [stop]
 T
@@ -476,10 +449,10 @@ NIL
 1
 
 PLOT
-11
-335
-348
-606
+295
+250
+610
+481
 bird-love by patch
 NIL
 patch count
@@ -494,10 +467,10 @@ PENS
 "default" 1.0 1 -16777216 true "" ""
 
 BUTTON
-15
-615
-78
-648
+659
+540
+722
+573
 NIL
 setup
 NIL
@@ -511,17 +484,17 @@ NIL
 1
 
 PLOT
-441
-489
-803
-639
+1
+244
+292
+473
 mean bird density
 time
 mean bird dens
 0.0
 10.0
 0.0
-10.0
+3.0
 true
 false
 "" ""
@@ -529,10 +502,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot mean [bird-density] of patches"
 
 BUTTON
-98
-652
-161
-685
+742
+577
+805
+610
 go 1k
 ifelse ticks <= 1000 [go] [stop]
 T
@@ -546,10 +519,10 @@ NIL
 1
 
 PLOT
-393
-10
-807
-328
+0
+13
+292
+240
 total birds over time
 NIL
 NIL
@@ -563,66 +536,26 @@ false
 PENS
 "default" 1.0 0 -16777216 true "" "plot count turtles"
 
-PLOT
-3
-10
-387
-328
-mean bird love
-time
-avg bird love
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -16777216 true "" "plot mean [bird-love] of patches"
-
-MONITOR
-352
-507
-426
-552
-bird-love +
-increase-count
-17
-1
-11
-
-MONITOR
-354
-559
-424
-604
-bird-love -
-decrease-count
-17
-1
-11
-
 SLIDER
-173
-649
-346
-682
+840
+570
+1013
+603
 change-chance
 change-chance
 0
 1
-0.05
+0.25
 .01
 1
 NIL
 HORIZONTAL
 
 BUTTON
-60
-690
-123
-723
+704
+615
+767
+648
 NIL
 go\n
 T
@@ -636,11 +569,85 @@ NIL
 1
 
 PLOT
-809
-499
-1246
-656
+298
+483
+603
+724
 bird-density by patch
+NIL
+NIL
+0.0
+4.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 1 -16777216 true "" "histogram [bird-density] of patches"
+
+MONITOR
+1685
+106
+1759
+151
+patch count
+count patches
+17
+1
+11
+
+SLIDER
+841
+604
+1013
+637
+offspring
+offspring
+0
+4
+1.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+839
+640
+1011
+673
+quartile-size
+quartile-size
+0
+.50
+0.25
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+840
+676
+1012
+709
+veg-chance
+veg-chance
+0
+0.1
+0.005
+0.001
+1
+NIL
+HORIZONTAL
+
+PLOT
+295
+15
+603
+250
+veg volume of patches
 NIL
 NIL
 0.0
@@ -651,28 +658,33 @@ true
 false
 "" ""
 PENS
-"default" 1.0 1 -16777216 true "" "histogram [bird-density] of patches"
+"default" 1.0 1 -16777216 true "" "histogram [vegetation-volume] of patches"
+
+SLIDER
+840
+534
+1012
+567
+max-tick
+max-tick
+0
+100
+100.0
+1
+1
+NIL
+HORIZONTAL
 
 MONITOR
-354
-392
-428
-437
-patch count
-count patches
+709
+673
+759
+718
+NIL
+ticks
 17
 1
 11
-
-TEXTBOX
-553
-643
-703
-673
-OLD OR WANT CONSTANT VALUE
-12
-0.0
-1
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -1198,20 +1210,14 @@ NetLogo 6.4.0
 export-world (word "start" behaviorspace-run-number".csv")</setup>
     <go>go</go>
     <postRun>export-world (word "end" behaviorspace-run-number".csv")</postRun>
-    <exitCondition>ticks = 500</exitCondition>
+    <exitCondition>ticks = 100</exitCondition>
     <metric>count turtles</metric>
     <metric>mean [vegetation-volume] of patches</metric>
     <metric>mean [bird-density] of patches</metric>
     <metric>mean [bird-love] of patches</metric>
     <metric>mean [yard-bird-estimate] of patches</metric>
     <enumeratedValueSet variable="change-chance">
-      <value value="0.05"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="max-bird">
-      <value value="3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="mean-vegetation-volume">
-      <value value="3"/>
+      <value value="0.25"/>
     </enumeratedValueSet>
   </experiment>
 </experiments>
