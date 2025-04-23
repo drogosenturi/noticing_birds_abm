@@ -18,6 +18,9 @@ from sklearn import metrics
 import shap
 
 # pull in the 10 test files
+file1 = "~/netlogo_models/data/cluster_data/4-10-25/run1_clean.csv"
+file2 = "~/netlogo_models/data/cluster_data/4-10-25/run2_clean.csv"
+'''
 file1 = "~/netlogo_models/data/cluster_data/3_3_1.csv"
 file2 = "~/netlogo_models/data/cluster_data/3_3_2.csv"
 file3 = "~/netlogo_models/data/cluster_data/3_3_3.csv"
@@ -29,11 +32,11 @@ file8 = "~/netlogo_models/data/cluster_data/3_3_8.csv"
 file9 = "~/netlogo_models/data/cluster_data/3_3_9.csv"
 file10 = "~/netlogo_models/data/cluster_data/3_3_10.csv"
 file_list = [file1,file2,file3,file4,file5,file6,file7,file8,file9,file10]
-
+'''
 # function to concatenate each dataframe and take average
 # USELESS BECAUSE SPATIAL EXPLICITNESS CHANGES EVERY TIME
 
-data = pd.read_csv(file_list[5])
+data = pd.read_csv(file2)
 data[["pycor"]] = data[["pycor"]].astype(str)
 data[["pxcor"]] = data[["pxcor"]].astype(str)
 data["patch"] = data["pxcor"] + data["pycor"]
@@ -42,9 +45,9 @@ data = data.drop(columns=["pycor","pxcor",'pcolor','plabel','plabel-color',
  
 # Veg-volume + habitat -> bird-density
 # veg volume is a bimodal dist
-#X = pd.DataFrame(data[["bird-density","yard-bird-estimate"]])
-X = data.drop(columns=['bird-density'])
-Y = data['bird-density']
+X = pd.DataFrame(data[["bird-density","yard-bird-estimate","max-bird-density"]])
+#X = data.drop(columns=['bird-density'])
+Y = data['bird-love']
 #plt.xlabel("habitat value")
 #plt.ylabel("bird density by patch")
 #plt.scatter(X,Y) # perfectly correlated as expect R2 = 1
