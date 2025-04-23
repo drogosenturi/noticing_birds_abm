@@ -10,6 +10,9 @@ globals
   ;change-chance ;; the number the random-float change chance is compared to. Correlates to % chance to change bird love
   increase-count ;; keep track of bird-love increase (remove in final)
   decrease-count ;; to keep track of bird-love decrease
+  adults
+  fledglings
+  babies
 ]
 
 patches-own
@@ -111,45 +114,47 @@ to go
 end
 
 to birds-explore
+  ask turtles with [age = 1] [
+  ; if offspring live past first dispersal, they become adults
+    set shape "default"
+  ]
   ask turtles with [shape = "circle"] [
-    disperse-babies
+    disperse-fledglings
+    stop
   ]
   ask turtles with [shape = "default"] [
     set size 0.75
-    set color yellow
+    set color red
     if random-float 1 < .05 [
-      disperse-parents
+      ;disperse-adults
     ]
   ]
 end
 
-to disperse-babies
+to disperse-fledglings
   let suitable-habitat other patches in-radius (max-pycor / random-float 2) with [
     max-bird-density > 0 and bird-density < max-bird-density
   ]
-  if any? suitable-habitat [
+  ifelse any? suitable-habitat [
     move-to max-one-of suitable-habitat [distance myself]
     settle
   ]
+  [ set color yellow ]
 end
 
-to disperse-parents
+to disperse-adults ;; remove? doesn't really affect the model
   let suitable-habitat other patches in-radius 2 with [ ;; make this so they stay on the same patch or VERY close
     max-bird-density > 0 and bird-density < max-bird-density
   ]
-  ifelse any? suitable-habitat [
+  if any? suitable-habitat [
     move-to min-one-of suitable-habitat [distance myself]
     settle
-  ]
-  [
-    set color blue
+    set color yellow
   ]
 end
 
 to settle ;; bird checks current patch for suitable habitat, settles if so
-  set shape "default"
   set settled? 1
-  set color red
   set bird-density count turtles-here
 end
 
@@ -164,7 +169,7 @@ to kill-birds
 end
 
 to birds-reproduce
-  ask turtles [
+  ask turtles with [shape = "default"] [
     hatch offspring [
       set shape "circle"
       set size 0.25
@@ -274,10 +279,13 @@ to visual ;; colors/labels for testing
   ]
   ;; testing colors
   ask patches [
-    ;set pcolor scale-color 66 vegetation-volume 16 0
-    set pcolor scale-color violet sum veg-change-list 5 -5 ;; color for veg list
+    set pcolor scale-color 66 vegetation-volume 16 0
+    ;set pcolor scale-color violet sum veg-change-list 5 -5 ;; color for veg list
     ;set pcolor scale-color gray bird-love 10 0
   ]
+  set adults count turtles with [age > 1]
+  set fledglings count turtles with [age = 1]
+  set babies count turtles with [age = 0]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -301,28 +309,11 @@ GRAPHICS-WINDOW
 24
 0
 24
-1
-1
+0
+0
 1
 ticks
 30.0
-
-BUTTON
-1719
-311
-1833
-344
-setup LOOP
-let x 0\nwhile [x < 1000000] [setup set x x + 1]
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
 
 BUTTON
 733
@@ -342,10 +333,10 @@ NIL
 1
 
 MONITOR
-1684
-54
-1760
-99
+1744
+58
+1820
+103
 Birds
 count turtles
 17
@@ -398,10 +389,10 @@ NIL
 1
 
 BUTTON
-1715
-383
-1834
-416
+1716
+421
+1835
+454
 NIL
 birds-reproduce\n
 NIL
@@ -415,10 +406,10 @@ NIL
 1
 
 BUTTON
-1736
-418
-1811
-451
+1734
+383
+1809
+416
 die :(
 kill-birds\ncalculate-bird-density
 NIL
@@ -545,7 +536,7 @@ change-chance
 change-chance
 0
 1
-0.25
+0.05
 .01
 1
 NIL
@@ -587,10 +578,10 @@ PENS
 "default" 1.0 1 -16777216 true "" "histogram [bird-density] of patches"
 
 MONITOR
-1685
-106
-1759
-151
+1745
+110
+1819
+155
 patch count
 count patches
 17
@@ -606,7 +597,7 @@ offspring
 offspring
 0
 4
-1.0
+2.0
 1
 1
 NIL
@@ -685,6 +676,60 @@ ticks
 17
 1
 11
+
+PLOT
+1132
+459
+1484
+684
+offspring
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot babies"
+
+PLOT
+1130
+20
+1473
+221
+adults
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot adults"
+
+PLOT
+1134
+226
+1476
+452
+fledglings
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot fledglings"
 
 @#$#@#$#@
 ## WHAT IS IT?
