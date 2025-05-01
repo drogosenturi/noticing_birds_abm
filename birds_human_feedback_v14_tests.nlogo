@@ -276,10 +276,30 @@ to visual ;; colors/labels for testing
     ;set plabel (word bird-love "," yard-bird-estimate "," neighbor-bird-estimate "," bird-density "," vegetation-volume)
     ;set plabel (word bird-density "," max-bird-density "," vegetation-volume)
     ;set plabel-color 14
+    ;; NN
+    if bird-density >= 1 and yard-bird-estimate >= 1 and bird-love > 6 and habitat >= 25 and vegetation-volume >= 2 and veg-changes >= 0 [
+      set pcolor green
+      stop
+    ]
+    ;; EoE
+    if bird-density = 0 and yard-bird-estimate <= 1 and bird-love < 4 and habitat <= 25 and vegetation-volume <= 2 and veg-changes <= 0 [
+      set pcolor 16 ; red
+      stop
+    ]
+    ;; POTENTIAL NN
+    if bird-density = 0 and yard-bird-estimate >= 1 and bird-love > 4 and veg-changes >= 0 [
+      set pcolor 85 ; cyan
+      stop
+    ]
+    ;; RISK OF EoE
+    if bird-density = 0 and yard-bird-estimate <= 1 and bird-love < 6 and veg-changes <= 0 [
+      set pcolor 126 ;violet
+      stop
+    ]
   ]
   ;; testing colors
   ask patches [
-    set pcolor scale-color 66 vegetation-volume 16 0
+    ;set pcolor scale-color 66 vegetation-volume 16 0
     ;set pcolor scale-color violet sum veg-change-list 5 -5 ;; color for veg list
     ;set pcolor scale-color gray bird-love 10 0
   ]
@@ -536,7 +556,7 @@ change-chance
 change-chance
 0
 1
-0.05
+0.25
 .01
 1
 NIL
@@ -597,7 +617,7 @@ offspring
 offspring
 0
 4
-2.0
+1.0
 1
 1
 NIL
@@ -627,7 +647,7 @@ veg-chance
 veg-chance
 0
 0.1
-0.005
+0.015
 0.001
 1
 NIL
