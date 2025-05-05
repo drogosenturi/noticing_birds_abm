@@ -10,9 +10,9 @@ globals
   ;change-chance ;; the number the random-float change chance is compared to. Correlates to % chance to change bird love
   increase-count ;; keep track of bird-love increase (remove in final)
   decrease-count ;; to keep track of bird-love decrease
-  adults
-  fledglings
-  babies
+  adults ;; count of the number of turtles with age > 1
+  fledglings ;; count of the number of turtles with age = 1
+  babies ;; count of the number of turtles with age = 0
 ]
 
 patches-own
@@ -37,7 +37,7 @@ to setup
   clear-all
   setup-patches
   reset-ticks
-  go
+  go ;; one tick of go to get things started
 end
 
 to setup-patches
@@ -53,22 +53,21 @@ to setup-patches
   ]
 end
 
-to assign-vegetation
-  ;; normal assign procedure
+to assign-vegetation ;; assigns vegetation to patches on the landscape matching empirical distribution
   loop [
       set vegetation-volume round random-exponential 3 ;; random-exponential 3 matches empirical distribution of 1000 chicago yards
       if vegetation-volume <= 16 [ stop ]
     ]
 end
 
-to calculate-habitat
+to calculate-habitat ;; habitat value is calculated based on vegetation of the patch and neighboring 8 patches
     set habitat sum [ vegetation-volume ] of neighbors
     set max-bird-density round ((habitat / (16 * count neighbors)) * 3) ;; 3 is decided value of max-bird
     set bird-density 0
     set veg-change-list [] ;; create empty list for later
 end
 
-to setup-birds ;; patches sprout turtles up to max-bird-dens
+to setup-birds ;; patches sprout turtles up to max-bird-density
   sprout one-of (range 0 (max-bird-density + 1)) [
       set size .5
       set color white
@@ -77,11 +76,11 @@ to setup-birds ;; patches sprout turtles up to max-bird-dens
     ]
 end
 
-to assign-bird-density
+to assign-bird-density ;; bird-density is set to the number of birds on patch
   set bird-density count turtles-here
 end
 
-to assign-bird-love
+to assign-bird-love ;; assign bird love to each patch on the landscpae to match empirical distribution of attitudes toward birds
   loop [
     set bird-love round random-normal 6.9 1.3 ; empircal love-distribution is 6.9 variance 1.3
     if bird-love >= 0 and bird-love <= 10 [ stop ]
@@ -98,13 +97,13 @@ end
 
 
 to go
-  birds-explore ;; mature birds look for habitat
-  kill-birds ;; birds that did not settle die
-  birds-reproduce ;; mature birds have chance to reproduce and offspring look for habitat
+  birds-explore ;; fledgling birds look for habitat
+  kill-birds ;; birds that did not settle or age > 3 die
+  birds-reproduce ;; adult birds reproduce 1
   calculate-bird-density ;; patches set how many birds are on own patch
-  update-bird-estimates ;; updates yard-bird-estimate after birds have moved on the landscape
-  change-bird-love ;; changes bird love based on bird estimate
-  change-vegetation ;; add or remove vegetation based on values of bird-love and bird estimates
+  update-bird-estimates ;; residents estimate how many birds are in their yards
+  change-bird-love ;; residents set bird love based on bird estimate
+  change-vegetation ;; residents add or remove vegetation based on values of bird-love
   update-habitat ;; calculate habitat after changing vegetation
   visual ;; colors/labels for testing
   ifelse count turtles = 0 or ticks >= max-tick [
@@ -114,23 +113,20 @@ to go
 end
 
 to birds-explore
-  ask turtles with [age = 1] [
   ; if offspring live past first dispersal, they become adults
+  ask turtles with [age = 1] [
     set shape "default"
   ]
+  ; fledlings have shape circle. They disperse, then stop this procedure
   ask turtles with [shape = "circle"] [
     disperse-fledglings
     stop
   ]
-  ask turtles with [shape = "default"] [
-    set size 0.75
-    set color red
-    if random-float 1 < .05 [
-      ;disperse-adults
-    ]
-  ]
+
 end
 
+;; fledglings look for patches with bird-density < max bird density and try to disperse to farthest patch.
+;; Can move up to the length of the landscape
 to disperse-fledglings
   let suitable-habitat other patches in-radius (max-pycor / random-float 2) with [
     max-bird-density > 0 and bird-density < max-bird-density
@@ -140,17 +136,6 @@ to disperse-fledglings
     settle
   ]
   [ set color yellow ]
-end
-
-to disperse-adults ;; remove? doesn't really affect the model
-  let suitable-habitat other patches in-radius 2 with [ ;; make this so they stay on the same patch or VERY close
-    max-bird-density > 0 and bird-density < max-bird-density
-  ]
-  if any? suitable-habitat [
-    move-to min-one-of suitable-habitat [distance myself]
-    settle
-    set color yellow
-  ]
 end
 
 to settle ;; bird checks current patch for suitable habitat, settles if so
@@ -168,6 +153,7 @@ to kill-birds
   ]
 end
 
+;; all adults that did not die (shape = default) hatch 1
 to birds-reproduce
   ask turtles with [shape = "default"] [
     hatch offspring [
@@ -187,7 +173,7 @@ to calculate-bird-density
 end
 
 to update-bird-estimates
-  ;; patches estimate bird-density of their own yard depending on the amount of vegetation they have -- NO LONGER IMPLEMENTED
+  ;; patches estimate bird-density of their own yard depending on the amount of vegetation they have
   ask patches [
     ;; yard bird estimate is bird density on patch + bird density of neigbors
     set yard-bird-estimate round ((bird-density + (mean [bird-density] of neighbors))); * (vegetation-volume * (random-float 1)))
@@ -198,19 +184,20 @@ to update-bird-estimates
 end
 
 to change-bird-love
-  ;; calculate value that is 1/4 of patches
-  let quartile round (count patches * quartile-size)
+  let quartile round (count patches * quartile-size) ;; calculate value that is 1/4 of patches
   let patch-list sort-on [yard-bird-estimate] patches ;; ascending order list of patches based on estimate
-  ;; subset top and bottom 25%
+
+  ;; subset top and bottom 25% of bird estimates
   let bottom-patches sublist patch-list 0 (quartile - 1)
   let top-patches sublist reverse patch-list 0 (quartile - 1)
 
+  ;; top patches have change-chance chance to increase vegetation
   ask patch-set top-patches [
     if random-float 1 <= change-chance [
       if bird-love < 10 [set bird-love bird-love + 1 set increase-count increase-count + 1]
     ]
   ]
-
+  ;; bottom patches have change-chance chance to decrease vegetation
   ask patch-set bottom-patches [
     if random-float 1 <= change-chance [
       if bird-love > 0 [set bird-love bird-love - 1 set decrease-count decrease-count + 1]
@@ -227,7 +214,7 @@ to change-vegetation ;; add vegetation based on bird-love, with 5% max chance to
 
     let increase-chance bird-love * veg-chance
     let decrease-chance bird-love * (veg-chance * (-1)) + (10 * veg-chance)
-
+    ;; if increase-chance wins random draw, increase vegetation up to 3 layers
     if increase-chance > random-float 1 and vegetation-volume < 16 [
       let number random 3
       ifelse (vegetation-volume + number) < 16 [
@@ -241,7 +228,7 @@ to change-vegetation ;; add vegetation based on bird-love, with 5% max chance to
       ]
       stop
     ]
-
+    ;; if decrease-chance wins random draw, decrease vegetation up to 3 layers
     if decrease-chance > random-float 1 and vegetation-volume > 0 [
       let number random 3
       ifelse vegetation-volume >= number [
@@ -263,7 +250,7 @@ to change-vegetation ;; add vegetation based on bird-love, with 5% max chance to
   ]
 end
 
-to update-habitat
+to update-habitat ; update habitat value after vegetation changes
   ask patches [
     set habitat sum [ vegetation-volume ] of neighbors ;patches in-radius habitat-radius
     set max-bird-density round ((habitat / (16 * count neighbors)) * 3) ;; 3 is decided value of max-bird
@@ -273,9 +260,6 @@ end
 
 to visual ;; colors/labels for testing
   ask patches [
-    ;set plabel (word bird-love "," yard-bird-estimate "," neighbor-bird-estimate "," bird-density "," vegetation-volume)
-    ;set plabel (word bird-density "," max-bird-density "," vegetation-volume)
-    ;set plabel-color 14
     ;; The following categories are a result of a TSNE analysis that grouped patches based on yard variables
     ;; NN
     if bird-density >= 1 and yard-bird-estimate >= 1 and bird-love > 6 and habitat >= 25 and vegetation-volume >= 2 and veg-changes >= 0 [
