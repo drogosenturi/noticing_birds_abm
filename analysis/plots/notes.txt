@@ -1,0 +1,17 @@
+#PCA
+Two components best according to elbow method
+pc2 has about 10% explained variance
+veg-vol has no relationship
+
+
+#k-means
+best silhoutte score is with 2 clusters @ 0.74
+    3 clusters silhouette = 0.67
+>separate NN/EoE based on 2 clusters instead of 4 categories?
+
+#tsne
+settled on perplexity 35, tested values visually ranging from 
+    15 to 40 by 5's. Final value chosen for best visual
+    representation while maintaining clusters seen at lower
+    perplexity.
+
