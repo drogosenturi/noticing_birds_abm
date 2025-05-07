@@ -182,7 +182,10 @@ to update-bird-estimates
   ;; patches estimate bird-density of their own yard depending on the amount of vegetation they have
   ask patches [
     ;; yard bird estimate is bird density on patch + bird density of neigbors
-    set yard-bird-estimate round ((bird-density + (mean [bird-density] of neighbors))); * (vegetation-volume * (random-float 1)))
+    ifelse weighted-estimate [
+      set yard-bird-estimate round ((bird-density + (mean [bird-density] of neighbors)) * (vegetation-volume * (random-float 1)))
+    ]
+    [ set yard-bird-estimate round ((bird-density + (mean [bird-density] of neighbors))) ]
     ;; if a patch estimates 0, but actually has birds around them, add 1 b/c nobody estimates 0 birds (SEM data)
     if bird-density + mean [bird-density] of neighbors > 0 and yard-bird-estimate = 0 ;; if you and neighbors have no birds, don't add 1
     [ set yard-bird-estimate 1 ]
@@ -302,8 +305,8 @@ end
 GRAPHICS-WINDOW
 613
 14
-1119
-521
+1617
+1019
 -1
 -1
 19.92
@@ -317,9 +320,9 @@ GRAPHICS-WINDOW
 1
 1
 0
-24
+49
 0
-24
+49
 0
 0
 1
@@ -327,11 +330,11 @@ ticks
 30.0
 
 BUTTON
-686
-528
-749
-561
-NIL
+652
+603
+715
+636
+tick
 go
 NIL
 1
@@ -504,10 +507,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot mean [bird-density] of patches"
 
 BUTTON
-695
-565
-758
-598
+684
+566
+747
+599
 go 1k
 ifelse ticks <= 1000 [go] [stop]
 T
@@ -554,10 +557,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-657
-603
-720
-636
+681
+528
+744
+561
 NIL
 go\n
 T
@@ -638,7 +641,7 @@ veg-chance
 veg-chance
 0
 0.1
-0.01
+0.015
 0.001
 1
 NIL
@@ -746,7 +749,7 @@ TEXTBOX
 946
 521
 1131
-665
+622
 ------------- KEY ---------------\nGreen = Noticing Nature (NN)\nCyan = Potential NN\nRed = Extinction of Experience (EoE)\nMagenta = Risk of EoE
 14
 0.0
@@ -762,46 +765,73 @@ bird test procedures\n
 0.0
 1
 
+SWITCH
+946
+633
+1104
+666
+weighted-estimate
+weighted-estimate
+0
+1
+-1000
+
 @#$#@#$#@
 ## WHAT IS IT?
 
-(a general understanding of what the model is trying to show or explain)
+*Noticing Birds* is a model of bird population dynamics on a landscape of urban residential yards controlled by decision-making human agents. The purpose of this model is to understand the feedback between human attitudes, yard management decisions, and bird populations. Spatial patterns of vegetation density, bird populations, and human attitudes toward birds are all used to understand where and in what direction feedbacks are occurring.
 
 ## HOW IT WORKS
+On `setup` each yard is assigned a `vegetation-volume` and `bird-love` value based on distributions assumed from empirical data from Chicago, IL. Patches sprout birds up to their `max-bird-density` to start, and one tick of the go procedure is initiated.
 
-(what rules the agents use to create the overall behavior of the model)
+On `go`, birds first move around on the landscape to find viable habitat. People estimate bird populations. As people see more birds, they increase their `bird-love`, or their attitudes toward birds; as people see less birds, they decrease their `bird love`. With a high `bird-love` value, they have a chance to *increase* the number of vegetation layers in their yards. With a low `bird-love` value, they have a chance to *decrease* the number of vegetation layers in their yards. 
 
 ## HOW TO USE IT
 
-(how to use the model, including a description of each of the items in the Interface tab)
+Click `setup` to initiate the model, then click `go` to initiate a full model run.
+
+### Plots
+
+> * "total birds over time" shows the number of turtles on the y axis and the number of ticks on the x-axis.
+* "veg-volume of patches" shows the distribution of vegetation volume for all yards.
+* "mean bird density" shows the mean bird population over time
+* "bird-love by patch" shows the distribution of `bird-love` for all yards
+* "mean vegetation over time" shows the mean of vegetation layers for all yards
+* "bird density by patch" shows the distribution of `bird-density` for all yards
+* "adults," "fledglings," and "hatchlings" shows the populations of each bird type on the landscape.
 
 ## THINGS TO NOTICE
 
-(suggested things for the user to notice while running the model)
+>Watch how the "veg-volume of patches" and "bird-love by patch" plots change over time.
+
+You should see a bimodal distribution emerge as the model progresses, with the patches at the minimum hypothesized to be in the Extinction of Experience, while the patches at the maximum hypothesized to be in the Noticing Nature Cycle.
+
+>Watch how clumps of red and green patches form
+
+You should see large swathes of green patches (in the noticing nature cycle; NN) and clumps of red patches (in the extinction of experience cycle; EoE). The patches on the edge of these clumps should be magenta and cyan, showing that they are heading towards NN or EoE. 
 
 ## THINGS TO TRY
 
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
+**not implemented yet**
+After running the model for the inital 100 ticks, select an experiment by using the dropdown box.
+### Bird education program
+A few yards in the extinction of experience are randomly chosen for an education program. After this program, residents will improve their attitudes toward birds, and more accurately estimate bird populations.
+### Yard enrichment program
+A few yards in the extinction of experience are randomly selected to be rich, native habitats. `vegetation-volume` will be increased to 16.
 
 ## EXTENDING THE MODEL
 
-* How do results change when yards are small vs. big; rural, suburban, urban
+> How do results change when yards are small vs. big; rural, suburban, urban?
 
-* Changing how birds are shared/observed between neighbors (different scales?)
+This can easily be added by reducing the dispersal distance of birds to simulate a large landscape.
 
-* add something to downgrade bird-love value 
+> Social Mimicry
 
-## NETLOGO FEATURES
-
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
+Using the *Yards* model as a basis, implement social mimicry into this model to see how people change their yards in response to their neighbors vegetation, in addition to bird populations.
 
 ## RELATED MODELS
 
-(models in the NetLogo Models Library and elsewhere which are of related interest)
-
-## CREDITS AND REFERENCES
-
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+*Yards* https://doi.org/10.25937/qwe6-zw45
 @#$#@#$#@
 default
 true
@@ -1293,6 +1323,33 @@ export-world (word "start" behaviorspace-run-number".csv")</setup>
     <metric>mean [bird-love] of patches</metric>
     <metric>mean [yard-bird-estimate] of patches</metric>
     <enumeratedValueSet variable="change-chance">
+      <value value="0.25"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="bird-est_sens_bios594" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>count patches with [pcolor = green]</metric>
+    <metric>count patches with [pcolor = 16]</metric>
+    <metric>count patches with [pcolor = 85]</metric>
+    <metric>count patches with [pcolor = 126]</metric>
+    <enumeratedValueSet variable="change-chance">
+      <value value="0.25"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-tick">
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="veg-chance">
+      <value value="0.015"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="offspring">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="weighted-estimate">
+      <value value="false"/>
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="quartile-size">
       <value value="0.25"/>
     </enumeratedValueSet>
   </experiment>

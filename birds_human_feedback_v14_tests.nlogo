@@ -190,7 +190,10 @@ to update-bird-estimates
   ;; patches estimate bird-density of their own yard depending on the amount of vegetation they have -- NO LONGER IMPLEMENTED
   ask patches [
     ;; yard bird estimate is bird density on patch + bird density of neigbors
-    set yard-bird-estimate round ((bird-density + (mean [bird-density] of neighbors))); * (vegetation-volume * (random-float 1)))
+    ifelse weighted-estimate [
+      set yard-bird-estimate round ((bird-density + (mean [bird-density] of neighbors)) * (vegetation-volume * (random-float 1)))
+    ]
+    [ set yard-bird-estimate round ((bird-density + (mean [bird-density] of neighbors))) ]
     ;; if a patch estimates 0, but actually has birds around them, add 1 b/c nobody estimates 0 birds (SEM data)
     if bird-density + mean [bird-density] of neighbors > 0 and yard-bird-estimate = 0 ;; if you and neighbors have no birds, don't add 1
     [ set yard-bird-estimate 1 ]
@@ -648,7 +651,7 @@ veg-chance
 veg-chance
 0
 0.1
-0.01
+0.015
 0.001
 1
 NIL
@@ -756,7 +759,7 @@ TEXTBOX
 946
 521
 1131
-665
+623
 ------------- KEY ---------------\nGreen = Noticing Nature (NN)\nCyan = Potential NN\nRed = Extinction of Experience (EoE)\nMagenta = Risk of EoE
 14
 0.0
@@ -771,6 +774,17 @@ bird test procedures\n
 11
 0.0
 1
+
+SWITCH
+944
+639
+1102
+672
+weighted-estimate
+weighted-estimate
+0
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -1303,6 +1317,50 @@ export-world (word "start" behaviorspace-run-number".csv")</setup>
     <metric>mean [bird-love] of patches</metric>
     <metric>mean [yard-bird-estimate] of patches</metric>
     <enumeratedValueSet variable="change-chance">
+      <value value="0.25"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="calibration_bios594" repetitions="1" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>count patches with [pcolor = green]</metric>
+    <metric>count patches with [pcolor = 16]</metric>
+    <metric>count patches with [pcolor = 85]</metric>
+    <metric>count patches with [pcolor = 126]</metric>
+    <steppedValueSet variable="change-chance" first="0.1" step="0.05" last="0.35"/>
+    <steppedValueSet variable="max-tick" first="25" step="25" last="100"/>
+    <steppedValueSet variable="veg-chance" first="0.005" step="0.005" last="0.02"/>
+    <enumeratedValueSet variable="offspring">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="quartile-size">
+      <value value="0.25"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="bird-est_sens_bios594" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>count patches with [pcolor = green]</metric>
+    <metric>count patches with [pcolor = 16]</metric>
+    <metric>count patches with [pcolor = 85]</metric>
+    <metric>count patches with [pcolor = 126]</metric>
+    <enumeratedValueSet variable="change-chance">
+      <value value="0.25"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-tick">
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="veg-chance">
+      <value value="0.015"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="offspring">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="weighted-estimate">
+      <value value="false"/>
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="quartile-size">
       <value value="0.25"/>
     </enumeratedValueSet>
   </experiment>
