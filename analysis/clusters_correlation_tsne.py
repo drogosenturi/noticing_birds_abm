@@ -40,7 +40,7 @@ def clean(file):
     return means
 final = clean(file_list)
 '''
-data = pd.read_csv(file2)
+data = pd.read_csv(file1)
 data[["pycor"]] = data[["pycor"]].astype(str)
 data[["pxcor"]] = data[["pxcor"]].astype(str)
 data["patch"] = data["pxcor"] + data["pycor"]
@@ -50,7 +50,7 @@ data = data.drop(columns=["pycor","pxcor",'pcolor','plabel','plabel-color',
 # Veg-volume + habitat -> bird-density
 # veg volume is a bimodal dist
 #X = pd.DataFrame(data[["bird-density","yard-bird-estimate"]])
-X = data.drop(columns=['bird-density'])
+X = pd.DataFrame(data) #.drop(columns=['bird-density'])
 Y = data['bird-density']
 
 # Scale
@@ -77,7 +77,7 @@ palette3 = ["#e5f5f9","#99d8c9","#2ca25f"]
 palette5 = ["#edf8fb","#b2e2e2","#66c2a4","#2ca25f","#006d2c"]
 # PCA
 from sklearn.decomposition import PCA
-pca = PCA(n_components=6) # used 6 initially
+pca = PCA(n_components=2) # used 6 initially
 pcafit = pca.fit(data_scaled)
 perc = pcafit.explained_variance_ratio_
 print("explained variance: ",perc)
@@ -93,6 +93,8 @@ plt.show()
 data["PC1"] = pca_trans[:,0]
 data["PC2"] = pca_trans[:,1]
 #data["PC3"] = pca_trans[:,2]
+data['bird-love-cnd'] = pd.cut(data['bird-love'],[-1,3,6,10],
+                                   labels=["poor","neutral","good"])
 ##bird density
 fig = plt.figure()
 #ax = fig.add_subplot(projection='3d') #for 3d plot
@@ -108,6 +110,7 @@ ax.set_ylabel("PC2")
 plt.show()
 
 # PC feature importance
+
 ##PC1
 x_ticks = ["Veg volume", "Habitat", "K", "Bird density","Attitudes",
            "Bird estimate","veg changes"]
@@ -218,13 +221,54 @@ data["labels"] = kmeans.labels_
 centroids = kmeans.cluster_centers_
 silhouette = metrics.silhouette_score(X, data["labels"],metric='sqeuclidean')
 print("score: ",silhouette)
+# decision boundaries attempt
+x_min, x_max = tsne[:,0].min()-1, tsne[:,0].max()+1
+y_min, y_max = tsne[:,1].min()-1, tsne[:,1].max()+1
+xx, yy = np.meshgrid(np.linspace(x_min, x_max, 100), 
+                     np.linspace(y_min, y_max, 100))
+
+from sklearn.neighbors import NearestNeighbors
+nbrs = NearestNeighbors(n_neighbors=1).fit(tsne)
+_,mesh_indices = nbrs.kneighbors(np.c_[xx.ravel(), yy.ravel()])
+mesh_predictions = fit.labels_[mesh_indices.flatten()]
+
+plt.contourf(xx, yy, mesh_predictions.reshape(xx.shape),
+             alpha=0.3, levels=len(np.unique(fit.labels_))-1,
+             colors=sns.color_palette('bright'))
 
 ax = sns.scatterplot(data=data,x="tsne1",y='tsne2',hue='labels',
                 palette="mako",edgecolor= "0.4") #str 0.0 - 1.0 is grayscale
+
+'''
+plt.scatter(fit.cluster_centers_[:,0], fit.cluster_centers_[:,1],
+            marker='X',s=50,color='red',linewidth=1,label='Centroids')
+'''
 legend = ax.legend(loc='upper right', fontsize = '10', frameon=True, 
                    framealpha=0.3, facecolor='0.7', title='K Clusters',
                    title_fontsize='10',borderpad=0.3)
 plt.show()
+'''
+# pairplot
+sns.pairplot(data, hue='labels',palette='mako',
+             plot_kws={'alpha':0.7,'edgecolor':'k'})
+plt.show
+'''
+# decision tree
+from sklearn.model_selection import train_test_split
+from sklearn import tree
+
+Y = data['labels']
+X_test, X_train, Y_test, Y_train = train_test_split(
+    X, Y, test_size=0.3, stratify=Y
+)
+
+clf = tree.DecisionTreeClassifier(max_depth=3)
+clf = clf.fit(X_train,Y_train)
+print("Test accuracy", clf.score(X_test,Y_test))
+fig = plt.figure()
+fig, axes = plt.subplots(nrows = 1,ncols=1,figsize=(6,6),dpi=1200)
+tree.plot_tree(clf, feature_names=X.columns.values, filled=True)
+plt.show
 
 '''
 rules for NN, EoE, potential NN, potential EoE
@@ -261,4 +305,23 @@ Risk of EoE:
     vegetation = any
     veg changes <= 0
 
+'''
+'''
+According to k-means:
+NN:
+    habitat min 35
+    max-bird-density >= 1
+    veg-changes min -2
+    max-bird min 1
+    yard-bird-est min 1
+    bird-love any
+    yard-veg any
+EoE:
+    habitat max 39
+    max-bird-density < 1
+    veg-changes max 3
+    max-bird max 1
+    yard-bird-est max 2
+    bird-love any
+    yard-veg any
 '''
