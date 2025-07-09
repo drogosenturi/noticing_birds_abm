@@ -42,7 +42,7 @@ to setup
   clear-all
   setup-patches
   reset-ticks
-  go ;; one tick of go to get things started
+  ;go ;; one tick of go to get things started
 end
 
 to setup-patches
@@ -66,8 +66,8 @@ to assign-vegetation ;; assigns vegetation to patches on the landscape matching 
 end
 
 to calculate-habitat ;; habitat value is calculated based on vegetation of the patch and neighboring 8 patches
-    set habitat sum [ vegetation-volume ] of neighbors
-    set max-bird-density round ((habitat / (16 * count neighbors)) * 3) ;; 3 is decided value of max-bird
+    set habitat (sum [ vegetation-volume ] of neighbors) + vegetation-volume
+    set max-bird-density round ((habitat / (16 * ((count neighbors) + 1 ))) * 3) ;; 3 is decided value of max-bird
     set bird-density 0
     set veg-change-list [] ;; create empty list for later
 end
@@ -94,7 +94,7 @@ end
 
 to assign-colors ;; testing and analysis
   ;set pcolor scale-color gray bird-love 10 0 ;;bird love colors
-  ;set pcolor scale-color 66 vegetation-volume 16 0 ;; veg volume colors
+  set pcolor scale-color 66 vegetation-volume 16 0 ;; veg volume colors
   ;set plabel (word bird-love "," yard-bird-estimate "," bird-density "," vegetation-volume)
   ;set plabel-color 14
   ;set pcolor gray ;; base color
@@ -268,8 +268,8 @@ end
 
 to update-habitat ; update habitat value after vegetation changes
   ask patches [
-    set habitat sum [ vegetation-volume ] of neighbors ;patches in-radius habitat-radius
-    set max-bird-density round ((habitat / (16 * count neighbors)) * 3) ;; 3 is decided value of max-bird
+    set habitat (sum [ vegetation-volume ] of neighbors) + vegetation-volume
+    set max-bird-density round ((habitat / (16 * ((count neighbors) + 1 ))) * 3) ;; 3 is decided value of max-bird
     set veg-changes sum veg-change-list ; record simple metric for + or - veg change over past 5 years
   ]
 end
@@ -311,32 +311,32 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 to visual ;; colors/labels for testing
-  ask patches [
-    ;; The following categories are a result of a TSNE analysis that grouped patches based on yard variables
-    ;; NN
-    if bird-density >= 1 and yard-bird-estimate >= 1 and bird-love > 6 and habitat >= 25 and vegetation-volume >= 2 and veg-changes >= 0 [
-      set pcolor green
-      stop
-    ]
-    ;; EoE
-    if bird-density = 0 and yard-bird-estimate <= 1 and bird-love < 4 and habitat <= 25 and vegetation-volume <= 2 and veg-changes <= 0 [
-      set pcolor 16 ; red
-      stop
-    ]
-    ;; POTENTIAL NN
-    if bird-density = 0 and yard-bird-estimate >= 1 and bird-love > 4 and veg-changes >= 0 [
-      set pcolor 85 ; cyan
-      stop
-    ]
-    ;; RISK OF EoE
-    if bird-density = 0 and yard-bird-estimate <= 1 and bird-love < 6 and veg-changes <= 0 [
-      set pcolor 126 ;violet
-      stop
-    ]
-  ]
+;  ask patches [
+;    ;; The following categories are a result of a TSNE analysis that grouped patches based on yard variables
+;    ;; NN
+;    if bird-density >= 1 and yard-bird-estimate >= 1 and bird-love > 6 and habitat >= 25 and vegetation-volume >= 2 and veg-changes >= 0 [
+;      set pcolor green
+;      stop
+;    ]
+;    ;; EoE
+;    if bird-density = 0 and yard-bird-estimate <= 1 and bird-love < 4 and habitat <= 25 and vegetation-volume <= 2 and veg-changes <= 0 [
+;      set pcolor 16 ; red
+;      stop
+;    ]
+;    ;; POTENTIAL NN
+;    if bird-density = 0 and yard-bird-estimate >= 1 and bird-love > 4 and veg-changes >= 0 [
+;      set pcolor 85 ; cyan
+;      stop
+;    ]
+;    ;; RISK OF EoE
+;    if bird-density = 0 and yard-bird-estimate <= 1 and bird-love < 6 and veg-changes <= 0 [
+;      set pcolor 126 ;violet
+;      stop
+;    ]
+;  ]
   ;; testing colors
   ask patches [
-    ;set pcolor scale-color 66 vegetation-volume 16 0
+    set pcolor scale-color 66 vegetation-volume 16 0
     ;set pcolor scale-color violet sum veg-change-list 5 -5 ;; color for veg list
     ;set pcolor scale-color gray bird-love 10 0
   ]
@@ -717,8 +717,8 @@ SLIDER
 max-tick
 max-tick
 0
-100
-100.0
+200
+150.0
 1
 1
 NIL

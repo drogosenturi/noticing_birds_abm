@@ -6,46 +6,16 @@ import seaborn as sns
 from sklearn.preprocessing import StandardScaler
 from sklearn.manifold import TSNE
 
-# pull in the 10 test files
-file1 = "~/netlogo_models/data/cluster_data/4-10-25/run1_clean.csv"
-file2 = "~/netlogo_models/data/cluster_data/4-10-25/run2_clean.csv"
-'''
-file3 = "~/netlogo_models/data/cluster_data/3_3_3.csv"
-file4 = "~/netlogo_models/data/cluster_data/3_3_4.csv"
-file5 = "~/netlogo_models/data/cluster_data/3_3_5.csv"
-file6 = "~/netlogo_models/data/cluster_data/3_3_6.csv"
-file7 = "~/netlogo_models/data/cluster_data/3_3_7.csv"
-file8 = "~/netlogo_models/data/cluster_data/3_3_8.csv"
-file9 = "~/netlogo_models/data/cluster_data/3_3_9.csv"
-file10 = "~/netlogo_models/data/cluster_data/3_3_10.csv"
-file_list = [file1,file2,file3,file4,file5,file6,file7,file8,file9,file10]
-'''
-'''
-# function to concatenate each dataframe and take average
-# USELESS BECAUSE SPATIAL EXPLICITNESS CHANGES EVERY TIME
-def clean(file):
-    df_list = []
-    for i in file:
-        data = pd.read_csv(i)
-        data[["pycor"]] = data[["pycor"]].astype(str)
-        data[["pxcor"]] = data[["pxcor"]].astype(str)
-        data["patch"] = data["pxcor"] + data["pycor"]
-        data = data.drop(columns=["pycor","pxcor",'pcolor','plabel','plabel-color',
-                                  'veg-change-list','patch','max-bird-density',
-                                  'yard-bird-estimate','bird-love'])
-        df_list.append(data)
-    print(df_list)
-    cat = pd.concat((df_list))
-    means = cat.groupby(level=0).mean()
-    return means
-final = clean(file_list)
-'''
-data = pd.read_csv(file1)
+# true/false denotes mimicry on/off
+end = "~/netlogo_models/experiments_7-3/snapshot60_true.csv"
+
+data = pd.read_csv(end)
 data[["pycor"]] = data[["pycor"]].astype(str)
 data[["pxcor"]] = data[["pxcor"]].astype(str)
 data["patch"] = data["pxcor"] + data["pycor"]
 data = data.drop(columns=["pycor","pxcor",'pcolor','plabel','plabel-color',
-                            'veg-change-list','patch'])
+                            'veg-change-list','patch','avg-neighbor-richness',
+                            'happy?'])
  
 # Veg-volume + habitat -> bird-density
 # veg volume is a bimodal dist
@@ -146,7 +116,7 @@ palette6 = ["#f0f9e8","#ccebc5","#a8ddb5","#7bccc4","#43a2ca","#0868ac"]
 
 # bird-dens
 ax = sns.scatterplot(data=data,x="tsne1",y='tsne2',hue='bird-density',
-                palette=palette3,edgecolor= "0.4") #str 0.0 - 1.0 is grayscale
+                palette='mako_r',edgecolor= "0.4") #str 0.0 - 1.0 is grayscale
 legend = ax.legend(loc='upper right', fontsize = '10', frameon=True, 
                    framealpha=0.3, facecolor='0.7', title='Birds in yard',
                    title_fontsize='10',borderpad=0.3)
@@ -154,14 +124,16 @@ plt.show()
 
 # carrying capacity
 ax = sns.scatterplot(data=data,x="tsne1",y='tsne2',hue='max-bird-density',
-                palette=palette3,edgecolor= "0.4") #str 0.0 - 1.0 is grayscale
+                palette='mako_r',edgecolor= "0.4") #str 0.0 - 1.0 is grayscale
 legend = ax.legend(loc='upper right', fontsize = '10', frameon=True, 
                    framealpha=0.3, facecolor='0.7', title='max-bird',
                    title_fontsize='10',borderpad=0.3)
 plt.show()
 
 # yard-bird-estimate
-ax = sns.scatterplot(data=data,x="tsne1",y='tsne2',hue='yard-bird-estimate',
+data['bird-est-cnd'] = pd.cut(data['yard-bird-estimate'],[0,5,10,15,20,100],
+                                labels=['0-5','6-10','11-15','16-20','20+'])
+ax = sns.scatterplot(data=data,x="tsne1",y='tsne2',hue='bird-est-cnd',
                 palette=palette5,edgecolor= "0.4") #str 0.0 - 1.0 is grayscale
 legend = ax.legend(loc='upper right', fontsize = '10', frameon=True, 
                    framealpha=0.3, facecolor='0.7', title='Bird Estimate',
@@ -222,6 +194,7 @@ centroids = kmeans.cluster_centers_
 silhouette = metrics.silhouette_score(X, data["labels"],metric='sqeuclidean')
 print("score: ",silhouette)
 # decision boundaries attempt
+'''
 x_min, x_max = tsne[:,0].min()-1, tsne[:,0].max()+1
 y_min, y_max = tsne[:,1].min()-1, tsne[:,1].max()+1
 xx, yy = np.meshgrid(np.linspace(x_min, x_max, 100), 
@@ -235,7 +208,7 @@ mesh_predictions = fit.labels_[mesh_indices.flatten()]
 plt.contourf(xx, yy, mesh_predictions.reshape(xx.shape),
              alpha=0.3, levels=len(np.unique(fit.labels_))-1,
              colors=sns.color_palette('bright'))
-
+'''
 ax = sns.scatterplot(data=data,x="tsne1",y='tsne2',hue='labels',
                 palette="mako",edgecolor= "0.4") #str 0.0 - 1.0 is grayscale
 
@@ -268,7 +241,7 @@ print("Test accuracy", clf.score(X_test,Y_test))
 fig = plt.figure()
 fig, axes = plt.subplots(nrows = 1,ncols=1,figsize=(6,6),dpi=1200)
 tree.plot_tree(clf, feature_names=X.columns.values, filled=True)
-plt.show
+plt.show()
 
 '''
 rules for NN, EoE, potential NN, potential EoE
