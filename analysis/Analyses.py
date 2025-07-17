@@ -8,8 +8,8 @@ class Processing:
         data[["pxcor"]] = data[["pxcor"]].astype(str)
         data["patch"] = data["pxcor"] + data["pycor"]
         data = data.drop(columns=["pycor","pxcor",'pcolor','plabel','plabel-color',
-                                    'veg-change-list','patch', 'veg-changes',
-                                    'happy?','max-bird-density', 'avg-neighbor-richness'])
+                                    'veg-change-list','patch',
+                                    'happy?','max-bird-density'])
         # scaling
         scaler = StandardScaler().set_output(transform="pandas")
         data_scaled = scaler.fit_transform(data)
@@ -40,7 +40,7 @@ class Clustering:
         X_test, X_train, Y_test, Y_train = train_test_split(
             X, Y, test_size=0.3, stratify=Y)
 
-        clf = tree.DecisionTreeClassifier(max_depth=3)
+        clf = tree.DecisionTreeClassifier(max_depth=1)
         clf = clf.fit(X_train,Y_train)
         print("Test accuracy", clf.score(X_test,Y_test))
         fig = plt.figure()
@@ -164,7 +164,7 @@ class Plots:
         return fig
 
 class Predictions:
-    def xgBoost(data):
+    def xgBoost_KMeans(datax,datay):
         # predict KMeans clusters with XGBoost at different timesteps
         from xgboost import XGBRegressor
         from sklearn.model_selection import train_test_split
@@ -176,9 +176,50 @@ class Predictions:
         import shap
         
         # set up data
-        X = pd.DataFrame(data[['vegetation-volume','habitat','bird-density','bird-love',
-                 'yard-bird-estimate']])
-        Y = pd.DataFrame(data[['labels']])
+        X = pd.DataFrame(datax[['vegetation-volume','habitat','bird-density','bird-love',
+                 'yard-bird-estimate','avg-neighbor-richness']])
+        Y = pd.DataFrame(datay[['labels']])
+        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = 0.2, stratify=Y)
+        scaler = StandardScaler().fit(X_train)
+        X_train = scaler.transform(X_train)
+        X_test = scaler.transform(X_test)
+        le = LabelEncoder()
+        Y_train = le.fit_transform(Y_train)
+
+        # gbm model
+        gbm = XGBRegressor()#n_estimators=2,max_depth=2,learning_rate=1)
+
+        # cross validation
+        gbm_scores = cross_val_score(gbm, X_train, Y_train)
+        print("CV R2: {0} (+/- {1})".format(round(gbm_scores.mean(),2),
+                                            round((gbm_scores.std() * 2),2)))
+        
+        # test final model
+        gbm.fit(X_train,Y_train) # fit the model
+        gbm_predict = gbm.predict(X_test) # predict with the model
+        # metrics for the model
+        r2 = round(metrics.r2_score(Y_test, gbm_predict), 2)
+        mae = metrics.mean_absolute_error(Y_test, gbm_predict)
+        feature_importance = pd.DataFrame(gbm.feature_importances_, index=X.columns, columns=['FI'])
+        # shap explanations
+        explainer = shap.Explainer(gbm)
+        shap_values = explainer(X)
+        return r2, mae, feature_importance, shap_values
+    
+    def xgBoost_vegChange(data_x,data_y):
+        from xgboost import XGBRegressor
+        from sklearn.model_selection import train_test_split
+        from sklearn.model_selection import cross_val_score
+        from sklearn.preprocessing import LabelEncoder
+        from sklearn.preprocessing import StandardScaler
+        from sklearn import metrics
+        import pandas as pd
+        import shap
+        
+        # set up data
+        X = pd.DataFrame(data_x[['vegetation-volume','avg-neighbor-richness','bird-density','bird-love',
+                 'yard-bird-estimate', 'habitat']])
+        Y = pd.DataFrame(data_y[['veg-changes']])
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = 0.2, stratify=Y)
         scaler = StandardScaler().fit(X_train)
         X_train = scaler.transform(X_train)

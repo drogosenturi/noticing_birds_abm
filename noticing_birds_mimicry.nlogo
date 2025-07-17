@@ -349,11 +349,11 @@ end
 GRAPHICS-WINDOW
 613
 14
-1119
-521
+1121
+523
 -1
 -1
-19.92
+10.0
 1
 10
 1
@@ -364,11 +364,11 @@ GRAPHICS-WINDOW
 1
 1
 0
-24
+49
 0
-24
-0
-0
+49
+1
+1
 1
 ticks
 30.0
@@ -391,10 +391,10 @@ NIL
 1
 
 MONITOR
-1480
-20
-1556
-65
+1832
+10
+1908
+55
 Birds
 count turtles
 17
@@ -430,10 +430,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot mean [vegetation-volume] of patches"
 
 BUTTON
-1477
-154
-1581
-187
+1829
+144
+1933
+177
 NIL
 birds-explore
 NIL
@@ -447,10 +447,10 @@ NIL
 1
 
 BUTTON
-1477
-226
-1596
-259
+1829
+216
+1948
+249
 NIL
 birds-reproduce\n
 NIL
@@ -464,10 +464,10 @@ NIL
 1
 
 BUTTON
-1477
-190
-1552
-223
+1829
+180
+1904
+213
 die :(
 kill-birds\ncalculate-bird-density
 NIL
@@ -636,10 +636,10 @@ PENS
 "default" 1.0 1 -16777216 true "" "histogram [bird-density] of patches"
 
 MONITOR
-1481
-72
-1555
-117
+1833
+62
+1907
+107
 patch count
 count patches
 17
@@ -736,10 +736,10 @@ ticks
 11
 
 PLOT
-1132
-459
-1484
-684
+1362
+476
+1714
+701
 nestlings
 NIL
 NIL
@@ -754,10 +754,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot babies"
 
 PLOT
-1130
-20
-1473
-221
+1360
+37
+1703
+238
 adults
 NIL
 NIL
@@ -772,10 +772,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot adults"
 
 PLOT
-1134
-226
-1476
-452
+1364
+243
+1706
+469
 fledglings
 NIL
 NIL
@@ -800,10 +800,10 @@ TEXTBOX
 0
 
 TEXTBOX
-1480
-130
-1630
-148
+1832
+120
+1982
+138
 bird test procedures\n
 11
 0.0
@@ -839,7 +839,7 @@ yard-difference
 yard-difference
 0
 10
-4.0
+2.0
 1
 1
 NIL
@@ -855,6 +855,24 @@ mimicry
 1
 1
 -1000
+
+PLOT
+1171
+184
+1650
+637
+mean veg-changes
+NIL
+NIL
+0.0
+10.0
+0.0
+2.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot mean [abs veg-changes] of patches"
 
 @#$#@#$#@
 ## WHAT IS IT?
