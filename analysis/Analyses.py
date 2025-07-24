@@ -27,7 +27,8 @@ class Clustering:
         print("score: ", silhouette)
         return data, silhouette
     
-    def decisionTree(data):
+    def decisionTreeK(data):
+        print('use mimicry = false')
         from sklearn.model_selection import train_test_split
         from sklearn import tree
         import matplotlib.pyplot as plt
@@ -43,9 +44,48 @@ class Clustering:
         clf = tree.DecisionTreeClassifier(max_depth=1)
         clf = clf.fit(X_train,Y_train)
         print("Test accuracy", clf.score(X_test,Y_test))
+        
+        # extract threshold and values of first split
+        n_nodes = clf.tree_.node_count
+        children_left = clf.tree_.children_left
+        children_right = clf.tree_.children_right
+        feature = clf.tree_.feature
+        threshold = clf.tree_.threshold
+        values = clf.tree_.value
+        for i in range(n_nodes):
+            print("node #:", i,"\n","% of yards:", values[i],"\n",
+                    "feature name:", X.columns.values[feature[i]],"\n", "threshold:", threshold[i],
+                    "\n","left:", children_left[i],"\n", "right:",children_right[i])
+        habitat_threshold = threshold[0]
+        # plot
         fig = plt.figure()
         fig, axes = plt.subplots(nrows = 1,ncols=1,figsize=(6,6),dpi=1200)
         tree.plot_tree(clf, feature_names=X.columns.values, filled=True)
+        plt.show()
+        return habitat_threshold
+    
+    def decisionTreeVeg(datax, datay):
+        print('use mimicry = false')
+        from sklearn.model_selection import train_test_split
+        from sklearn import tree
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+        import pandas as pd
+
+        X = pd.DataFrame(datax[['vegetation-volume','habitat','bird-density','bird-love',
+                 'yard-bird-estimate', 'avg-neighbor-richness']])
+        Y = pd.DataFrame(datay[['veg-changes']])
+        X_test, X_train, Y_test, Y_train = train_test_split(
+            X, Y, test_size=0.3)
+
+        clf = tree.DecisionTreeRegressor(criterion='squared_error',max_depth=4,min_samples_leaf=50)
+        clf = clf.fit(X_train,Y_train)
+        print("Test accuracy", clf.score(X_test,Y_test))
+        
+        # plot
+        fig = plt.figure()
+        fig, axes = plt.subplots(nrows = 1,ncols=1,figsize=(20,12),dpi=800)
+        tree.plot_tree(clf, feature_names=X.columns.values, fontsize=7, filled=True)
         plt.show()
 
 class DimensionalityReduction:
@@ -247,3 +287,67 @@ class Predictions:
         shap_values = explainer(X)
         return r2, mae, feature_importance, shap_values
 
+class Stats:
+    def tTest(data):
+        import pandas as pd
+        import numpy as np
+        from scipy.stats import mannwhitneyu
+        import matplotlib.pyplot as plt
+
+        cluster0 = data.loc[data['labels'] == 0]
+        cluster1 = data.loc[data['labels'] == 1]
+        fig = plt.figure(constrained_layout = True, figsize=(8,6))
+
+        print('vegetation volume')
+        t_stat, p_val = mannwhitneyu(cluster0['vegetation-volume'], cluster1['vegetation-volume'])
+        print(f't-stat: {t_stat}', f'p-val: {p_val}\n')
+        ax = fig.add_subplot(321)
+        x = [cluster0['vegetation-volume'], cluster1['vegetation-volume']]
+        plt.title('vegetation-volume')
+        ax.text(x=0, y=0,s= f'p = {p_val}')
+        plt.boxplot(x)
+
+        print('habitat')
+        t_stat, p_val = mannwhitneyu(cluster0['habitat'], cluster1['habitat'])
+        print(f't-stat: {t_stat}', f'p-val: {p_val}\n')
+        ax = fig.add_subplot(322)
+        x = [cluster0['habitat'], cluster1['habitat']]
+        plt.title('habitat')
+        ax.text(x=0, y=0,s= f'p = {p_val}')
+        plt.boxplot(x)
+
+        print('bird-density')
+        t_stat, p_val = mannwhitneyu(cluster0['bird-density'], cluster1['bird-density'])
+        print(f't-stat: {t_stat}', f'p-val: {p_val}\n')
+        ax = fig.add_subplot(323)
+        x = [cluster0['bird-density'], cluster1['bird-density']]
+        plt.title('bird-density')
+        ax.text(x=0, y=0,s= f'p = {p_val}')
+        plt.boxplot(x)
+
+        print('bird-love')
+        t_stat, p_val = mannwhitneyu(cluster0['bird-love'], cluster1['bird-love'])
+        print(f't-stat: {t_stat}', f'p-val: {p_val}\n')
+        ax = fig.add_subplot(324)
+        x = [cluster0['bird-love'], cluster1['bird-love']]
+        plt.title('bird-love')
+        ax.text(x=0, y=0,s= f'p = {p_val}')
+        plt.boxplot(x)
+
+        print('yard-bird-estimate')
+        t_stat, p_val = mannwhitneyu(cluster0['yard-bird-estimate'], cluster1['yard-bird-estimate'])
+        print(f't-stat: {t_stat}', f'p-val: {p_val}\n')
+        ax = fig.add_subplot(325)
+        x = [cluster0['yard-bird-estimate'], cluster1['yard-bird-estimate']]
+        plt.title('yard-bird-estimate')
+        ax.text(x=0, y=0,s= f'p = {p_val}')
+        plt.boxplot(x)
+
+        print('avg-neighbor-richness')
+        t_stat, p_val = mannwhitneyu(cluster0['avg-neighbor-richness'], cluster1['avg-neighbor-richness'])
+        print(f't-stat: {t_stat}', f'p-val: {p_val}\n')
+        ax = fig.add_subplot(326)
+        x = [cluster0['avg-neighbor-richness'], cluster1['avg-neighbor-richness']]
+        plt.title('avg-neighbor-richness')
+        ax.text(x=0, y=0,s= f'p = {p_val}')
+        plt.boxplot(x)
