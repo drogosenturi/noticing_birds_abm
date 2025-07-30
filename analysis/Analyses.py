@@ -296,6 +296,8 @@ class Stats:
 
         cluster0 = data.loc[data['labels'] == 0]
         cluster1 = data.loc[data['labels'] == 1]
+        cluster0 = cluster0.sample(1000)
+        cluster1 = cluster1.sample(1000)
         fig = plt.figure(constrained_layout = True, figsize=(8,6))
 
         print('vegetation volume')

@@ -30,6 +30,7 @@ patches-own
   ;;;;;;; MIMICRY VARIABLES
   avg-neighbor-richness ;; avg richness of up to 8 neighbors
   happy? ;; determiens whether patch is content with number of veg layers
+  cluster ;; do i belong to a cluster?
 ]
 
 turtles-own
@@ -42,6 +43,7 @@ to setup
   clear-all
   setup-patches
   reset-ticks
+  visual
   ;go ;; one tick of go to get things started
 end
 
@@ -94,10 +96,11 @@ end
 
 to assign-colors ;; testing and analysis
   ;set pcolor scale-color gray bird-love 10 0 ;;bird love colors
-  set pcolor scale-color 66 vegetation-volume 16 0 ;; veg volume colors
+  ;set pcolor scale-color 66 vegetation-volume 16 0 ;; veg volume colors
   ;set plabel (word bird-love "," yard-bird-estimate "," bird-density "," vegetation-volume)
   ;set plabel-color 14
   ;set pcolor gray ;; base color
+  set cluster nobody ;; for cluster calculation at end
 end
 
 
@@ -311,18 +314,18 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 to visual ;; colors/labels for testing
-;  ask patches [
-;    ;; The following categories are a result of a TSNE analysis that grouped patches based on yard variables
-;    ;; NN
-;    if bird-density >= 1 and yard-bird-estimate >= 1 and bird-love > 6 and habitat >= 25 and vegetation-volume >= 2 and veg-changes >= 0 [
-;      set pcolor green
-;      stop
-;    ]
-;    ;; EoE
-;    if bird-density = 0 and yard-bird-estimate <= 1 and bird-love < 4 and habitat <= 25 and vegetation-volume <= 2 and veg-changes <= 0 [
-;      set pcolor 16 ; red
-;      stop
-;    ]
+  ask patches [
+    ;; The following categories are a result of a TSNE analysis that grouped patches based on yard variables
+    ;; NN
+    if habitat >= 73.6 [
+      set pcolor green
+      stop
+    ]
+    ;; EoE
+    if habitat < 73.6 [
+      set pcolor 16 ; red
+      stop
+    ]
 ;    ;; POTENTIAL NN
 ;    if bird-density = 0 and yard-bird-estimate >= 1 and bird-love > 4 and veg-changes >= 0 [
 ;      set pcolor 85 ; cyan
@@ -333,10 +336,10 @@ to visual ;; colors/labels for testing
 ;      set pcolor 126 ;violet
 ;      stop
 ;    ]
-;  ]
+  ]
   ;; testing colors
   ask patches [
-    set pcolor scale-color 66 vegetation-volume 16 0
+    ;set pcolor scale-color 66 vegetation-volume 16 0
     ;set pcolor scale-color violet sum veg-change-list 5 -5 ;; color for veg list
     ;set pcolor scale-color gray bird-love 10 0
   ]
@@ -344,6 +347,47 @@ to visual ;; colors/labels for testing
   set adults count turtles with [age > 1]
   set fledglings count turtles with [age = 1]
   set babies count turtles with [age = 0]
+end
+
+  ;; for identifying contiguous clusters
+to find-clusters
+  loop [
+    ;; pick a random patch that isn't in a cluster yet
+    let seed one-of patches with [cluster = nobody]
+    ;; if we can't find one, then we're done!
+    if seed = nobody
+    [ show-clusters
+      stop ]
+    ;; otherwise, make the patch the "leader" of a new cluster
+    ;; by assigning itself to its own cluster, then call
+    ;; grow-cluster to find the rest of the cluster
+    ask seed
+    [ set cluster self
+      grow-cluster ]
+  ]
+  display
+end
+
+to grow-cluster  ;; patch procedure
+  ask neighbors4 with [(cluster = nobody) and
+    (pcolor = [pcolor] of myself)]
+  [ set cluster [cluster] of myself
+    grow-cluster ]
+end
+
+to show-clusters
+  let counter 0
+  loop
+  [ ;; pick a random patch we haven't labeled yet
+    let p one-of patches with [plabel = ""]
+    if p = nobody
+      [ stop ]
+    ;; give all patches in the chosen patch's cluster
+    ;; the same label
+    ask p
+    [ ask patches with [cluster = [cluster] of myself]
+      [ set plabel counter ] ]
+    set counter counter + 1 ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -852,7 +896,7 @@ SWITCH
 811
 mimicry
 mimicry
-1
+0
 1
 -1000
 
@@ -873,6 +917,23 @@ false
 "" ""
 PENS
 "default" 1.0 0 -16777216 true "" "plot mean [abs veg-changes] of patches"
+
+BUTTON
+1011
+711
+1155
+744
+NIL
+find-clusters
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?

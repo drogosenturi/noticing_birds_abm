@@ -55,7 +55,7 @@ for f in listdir(path):
 ### MIMICRY: FALSE ###
 data_list = []
 for f in listdir(path):
-    if f.endswith('false.csv') & f.startswith('tick150'):
+    if f.endswith('true.csv') & f.startswith('tick150'):
         data_list.append(path + f)
 
 #runVegChanges(tick50,tick60)
@@ -64,6 +64,8 @@ for f in listdir(path):
 #     thresholds.append(runCART(i))
 
 data = runStats(data_list[5])
+# output w/ clusters
+# data.to_csv('~/tick150_true_clusters.csv')
 
 # filex = path + "tick140_run15_true.csv"
 # filey = path + "tick150_run15_true.csv"
