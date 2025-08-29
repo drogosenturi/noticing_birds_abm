@@ -25,7 +25,7 @@ def clean_csv(file):
         writer = csv.writer(f)
         writer.writerows(cleaned_lines)
 
-path = "/home/sokui/netlogo_models/experiments_7-22/"
+path = "/home/sokui/netlogo_models/experiments_8-29/results/"
 
 for f in listdir(path):
     if f.endswith('.csv'):

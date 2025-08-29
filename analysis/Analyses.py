@@ -187,20 +187,20 @@ class Plots:
 
         fig = plt.figure(layout='constrained',figsize=(8,6))
         #FI plot
-        ax = fig.add_subplot(211)
+        # ax = fig.add_subplot(111) # changed to 1 for now, removing subplots for now too
         sns.barplot(data=feature_importance, x='FI', y=feature_importance.index, 
                     color='#8b76f3',width=0.5)
         plt.suptitle(title,x=0.56,fontsize=14,fontweight='semibold')
         plt.yticks(fontsize=14)
         plt.ylabel('')
-        plt.xlabel('Predicting K Clusters', fontsize=14,x=0.45)
-        ax.text(x=0.25,y=0,s = f'R2 = {r2}')
-        #SHAP plot
-        ax = fig.add_subplot(212)
-        shap.plots.beeswarm(shap_values,show=False, color=plt.get_cmap("cool"),
-                            plot_size=None,ax=ax)
-        plt.xlabel('SHAP',x=0.45)
-        plt.show()
+        plt.xlabel('Feature Importance', fontsize=14,x=0.45)
+        plt.text(x=-0.12,y=-0.30,s = f'R2 = {r2}')
+        # #SHAP plot
+        # ax = fig.add_subplot(212)
+        # shap.plots.beeswarm(shap_values,show=False, color=plt.get_cmap("cool"),
+        #                     plot_size=None,ax=ax)
+        # plt.xlabel('SHAP',x=0.45)
+        # plt.show()
         return fig
 
 class Predictions:
@@ -217,7 +217,7 @@ class Predictions:
         
         # set up data
         X = pd.DataFrame(datax[['vegetation-volume','habitat','bird-density','bird-love',
-                 'yard-bird-estimate','avg-neighbor-richness']])
+                 'yard-bird-estimate','avg-neighbor-richness', 'veg-changes']])
         Y = pd.DataFrame(datay[['labels']])
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = 0.2, stratify=Y)
         scaler = StandardScaler().fit(X_train)
@@ -246,7 +246,7 @@ class Predictions:
         shap_values = explainer(X)
         return r2, mae, feature_importance, shap_values
     
-    def xgBoost_vegChange(data_x,data_y):
+    def xgBoost_long(data,train_start,train_end,pred):#vegChange(data_x,data_y):
         from xgboost import XGBRegressor
         from sklearn.model_selection import train_test_split
         from sklearn.model_selection import cross_val_score
@@ -257,10 +257,17 @@ class Predictions:
         import shap
         
         # set up data
-        X = pd.DataFrame(data_x[['vegetation-volume','avg-neighbor-richness','bird-density','bird-love',
-                 'yard-bird-estimate', 'habitat']])
-        Y = pd.DataFrame(data_y[['veg-changes']])
-        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = 0.2, stratify=Y)
+        # X = pd.DataFrame(data_x[['vegetation-volume','avg-neighbor-richness','bird-density','bird-love',
+        #          'yard-bird-estimate', 'habitat']])
+        # Y = pd.DataFrame(data_y[['veg-changes']])
+        # to get the # of years you want it's 5 * # of years columns w/o avg-neighbor
+        # make Y explicit by name - just habitat, or the whole model?
+        X = data.iloc[0:,train_start:train_end] # trying to remove habitat data from X
+        # r2 = 97 @ 20 years of training
+        X = X[X.columns.drop(list(X.filter(regex='habitat')))]
+        Y = data[pred]
+
+        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = 0.2)#, stratify=Y)
         scaler = StandardScaler().fit(X_train)
         X_train = scaler.transform(X_train)
         X_test = scaler.transform(X_test)
@@ -286,6 +293,21 @@ class Predictions:
         explainer = shap.Explainer(gbm)
         shap_values = explainer(X)
         return r2, mae, feature_importance, shap_values
+    
+    # def xgBoost_long(data):
+    #     from xgboost import XGBRegressor
+    #     from sklearn.model_selection import train_test_split
+    #     from sklearn.model_selection import cross_val_score
+    #     from sklearn.preprocessing import LabelEncoder
+    #     from sklearn.preprocessing import StandardScaler
+    #     from sklearn import metrics
+    #     import pandas as pd
+    #     import shap
+
+    #     # to get the # of years you want it's 7 * # of years columns
+    #     # make Y explicit by name - just habitat, or the whole model?
+    #     X = data.iloc[0:,0:140]
+    #     Y = data["habitat59"]
 
 class Stats:
     def tTest(data):
@@ -302,54 +324,71 @@ class Stats:
 
         print('vegetation volume')
         t_stat, p_val = mannwhitneyu(cluster0['vegetation-volume'], cluster1['vegetation-volume'])
-        print(f't-stat: {t_stat}', f'p-val: {p_val}\n')
+        print(f'U: {t_stat}', f'p-val: {p_val}\n')
+        if p_val < 0.001:
+            p_val = "***"
         ax = fig.add_subplot(321)
         x = [cluster0['vegetation-volume'], cluster1['vegetation-volume']]
         plt.title('vegetation-volume')
         ax.text(x=0, y=0,s= f'p = {p_val}')
-        plt.boxplot(x)
+        plt.boxplot(x, labels = ["NN","EoE"])
 
         print('habitat')
         t_stat, p_val = mannwhitneyu(cluster0['habitat'], cluster1['habitat'])
-        print(f't-stat: {t_stat}', f'p-val: {p_val}\n')
+        
+        print(f'U: {t_stat}', f'p-val: {p_val}\n')
+        if p_val < 0.001:
+            p_val = "***"
         ax = fig.add_subplot(322)
         x = [cluster0['habitat'], cluster1['habitat']]
         plt.title('habitat')
         ax.text(x=0, y=0,s= f'p = {p_val}')
-        plt.boxplot(x)
+        plt.boxplot(x, labels = ["NN","EoE"])
 
         print('bird-density')
         t_stat, p_val = mannwhitneyu(cluster0['bird-density'], cluster1['bird-density'])
-        print(f't-stat: {t_stat}', f'p-val: {p_val}\n')
+        
+        print(f'U: {t_stat}', f'p-val: {p_val}\n')
+        if p_val < 0.001:
+            p_val = "***"
         ax = fig.add_subplot(323)
         x = [cluster0['bird-density'], cluster1['bird-density']]
         plt.title('bird-density')
         ax.text(x=0, y=0,s= f'p = {p_val}')
-        plt.boxplot(x)
+        plt.boxplot(x, labels = ["NN","EoE"])
 
         print('bird-love')
         t_stat, p_val = mannwhitneyu(cluster0['bird-love'], cluster1['bird-love'])
-        print(f't-stat: {t_stat}', f'p-val: {p_val}\n')
+        
+        print(f'U: {t_stat}', f'p-val: {p_val}\n')
+        if p_val < 0.001:
+            p_val = "***"
         ax = fig.add_subplot(324)
         x = [cluster0['bird-love'], cluster1['bird-love']]
         plt.title('bird-love')
         ax.text(x=0, y=0,s= f'p = {p_val}')
-        plt.boxplot(x)
+        plt.boxplot(x, labels = ["NN","EoE"])
 
         print('yard-bird-estimate')
         t_stat, p_val = mannwhitneyu(cluster0['yard-bird-estimate'], cluster1['yard-bird-estimate'])
-        print(f't-stat: {t_stat}', f'p-val: {p_val}\n')
+        
+        print(f'U: {t_stat}', f'p-val: {p_val}\n')
+        if p_val < 0.001:
+            p_val = "***"
         ax = fig.add_subplot(325)
         x = [cluster0['yard-bird-estimate'], cluster1['yard-bird-estimate']]
         plt.title('yard-bird-estimate')
         ax.text(x=0, y=0,s= f'p = {p_val}')
-        plt.boxplot(x)
+        plt.boxplot(x, labels = ["NN","EoE"])
 
         print('avg-neighbor-richness')
         t_stat, p_val = mannwhitneyu(cluster0['avg-neighbor-richness'], cluster1['avg-neighbor-richness'])
-        print(f't-stat: {t_stat}', f'p-val: {p_val}\n')
+        
+        print(f'U: {t_stat}', f'p-val: {p_val}\n')
+        if p_val < 0.001:
+            p_val = "***"
         ax = fig.add_subplot(326)
         x = [cluster0['avg-neighbor-richness'], cluster1['avg-neighbor-richness']]
         plt.title('avg-neighbor-richness')
-        ax.text(x=0, y=0,s= f'p = {p_val}')
-        plt.boxplot(x)
+        ax.text(x=0.5, y=0.5,s= p_val)
+        plt.boxplot(x, labels = ["NN","EoE"])

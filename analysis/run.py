@@ -1,8 +1,4 @@
 from Analyses import Processing, Clustering, DimensionalityReduction, Predictions, Plots, Stats
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 from os import listdir
 
 
@@ -55,15 +51,16 @@ for f in listdir(path):
 ### MIMICRY: FALSE ###
 data_list = []
 for f in listdir(path):
-    if f.endswith('true.csv') & f.startswith('tick150'):
+    if f.endswith('false.csv') & f.startswith('tick150'):
         data_list.append(path + f)
 
 #runVegChanges(tick50,tick60)
-# thresholds = []
-# for i in data_list:
-#     thresholds.append(runCART(i))
 
-data = runStats(data_list[5])
+thresholds = []
+for i in data_list:
+    thresholds.append(runCART(i))
+
+#data = runStats(data_list[5])
 # output w/ clusters
 # data.to_csv('~/tick150_true_clusters.csv')
 
