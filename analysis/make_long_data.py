@@ -1,4 +1,5 @@
 import pandas as pd
+import sys
 import numpy as np
 from os import listdir
 from Analyses import Predictions, Plots
@@ -36,17 +37,54 @@ for file in data_list:
 # to get the # of years you want it's 5 * # of years
 start_train = 200 # year 40
 end_train = 225 # year 45
-predict = "habitat70"
+predict = "habitat90"
 r2, mae, feature_importance, shap_values = Predictions.xgBoost_long(main, start_train, end_train, predict)
 
+# combine the feature importance of each predictor
 summed_FI = pd.DataFrame({"FI": 0}, index=['vegetation-volume','bird-density','bird-love',
                  'yard-bird-estimate']) # removed avg-neighbor-richness and habitat for now
 summed_FI.loc['vegetation-volume'] = sum(feature_importance.filter(regex="vegetation-volume", axis="index")['FI'])
-#summed_FI.loc['habitat'] = sum(feature_importance.filter(regex="habitat", axis="index")['FI'])
 summed_FI.loc['bird-density'] = sum(feature_importance.filter(regex="bird-density", axis="index")['FI'])
 summed_FI.loc['bird-love'] = sum(feature_importance.filter(regex="bird-love", axis="index")['FI'])
 summed_FI.loc['yard-bird-estimate'] = sum(feature_importance.filter(regex="yard-bird-estimate", axis="index")['FI'])
-#summed_FI.loc['avg-neighbor-richness'] = sum(feature_importance.filter(regex="avg-neighbor-richness", axis="index")['FI'])
-#summed_FI.loc['veg-changes'] = sum(feature_importance.filter(regex="veg-changes", axis="index")['FI'])
-# figure out how to summarize shap values like FI values above
-plot = Plots.xgShap(summed_FI, shap_values, "trained year 60 - 65 | predicting habitat at year 90", r2)
+
+# trying to summarize SHAP
+columns = ['vegetation-volume60','bird-density60','bird-love60','yard-bird-estimate60',
+'vegetation-volume61','bird-density61','bird-love61','yard-bird-estimate61',
+'vegetation-volume62','bird-density62','bird-love62','yard-bird-estimate62',
+'vegetation-volume63','bird-density63','bird-love63','yard-bird-estimate63',
+'vegetation-volume64','bird-density64','bird-love64','yard-bird-estimate64']
+
+shapframe = pd.DataFrame(shap_values.values, columns=columns)
+shapdata = pd.DataFrame(shap_values.data, columns = columns)
+
+summedShap = pd.DataFrame(columns=['vegetation-volume','bird-density','bird-love',
+                 'yard-bird-estimate'])
+summedShap['vegetation-volume'] = shapframe.filter(regex="vegetation-volume").sum(1)
+summedShap['bird-density'] = shapframe.filter(regex="bird-density").sum(1)
+summedShap['bird-love'] = shapframe.filter(regex="bird-love").sum(1)
+summedShap['yard-bird-estimate'] = shapframe.filter(regex="yard-bird-estimate").sum(1)
+newshap = summedShap.values
+print(newshap)
+summedData = pd.DataFrame(columns=['vegetation-volume','bird-density','bird-love',
+                 'yard-bird-estimate'])
+summedData['vegetation-volume'] = shapdata.filter(regex="vegetation-volume").mean(1)
+summedData['bird-density'] = shapdata.filter(regex="bird-density").mean(1)
+summedData['bird-love'] = shapdata.filter(regex="bird-love").mean(1)
+summedData['yard-bird-estimate'] = shapdata.filter(regex="yard-bird-estimate").mean(1)
+newShapData = summedData.values
+print(newShapData)
+import shap
+import matplotlib.pyplot as plt
+import seaborn as sns
+shap_explain = shap.Explanation(
+        values = newshap,
+        base_values=shap_values.base_values,
+        data=newShapData,
+        feature_names=summedShap.columns.tolist()
+        )
+#shap.summary_plot(shap_explain)
+#shapframe.to_csv("/home/sokui/shap.csv")
+#shapdata.to_csv("/home/sokui/shapdata.csv")
+
+plot = Plots.xgShap(summed_FI, shap_explain, "trained year 60 - 65 | predicting habitat at year 90", r2)

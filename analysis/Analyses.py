@@ -28,7 +28,6 @@ class Clustering:
         return data, silhouette
     
     def decisionTreeK(data):
-        print('use mimicry = false')
         from sklearn.model_selection import train_test_split
         from sklearn import tree
         import matplotlib.pyplot as plt
@@ -59,7 +58,7 @@ class Clustering:
         habitat_threshold = threshold[0]
         # plot
         fig = plt.figure()
-        fig, axes = plt.subplots(nrows = 1,ncols=1,figsize=(6,6),dpi=1200)
+        fig, axes = plt.subplots(nrows = 1,ncols=1,figsize=(3,4),dpi=500)
         tree.plot_tree(clf, feature_names=X.columns.values, filled=True)
         plt.show()
         return habitat_threshold
@@ -158,7 +157,7 @@ class Plots:
         ax = sns.scatterplot(data=data,x="tsne1",y='tsne2',hue='labels',
                         palette='mako_r',edgecolor= "0.2") #str 0.0 - 1.0 is grayscale
         ax.legend(loc='upper right', fontsize = '10', frameon=True, 
-                        framealpha=0.3, facecolor='0.7', title='Habitat',
+                        framealpha=0.3, facecolor='0.7', title='K-cluster',
                         title_fontsize='10',borderpad=0.3)
         plt.show()
 
@@ -178,28 +177,44 @@ class Plots:
         ax.set_xlabel("PC1")
         ax.set_ylabel("PC2")
         plt.show()
-    
+
     def xgShap(feature_importance, shap_values, title, r2):
         import pandas as pd
         import matplotlib.pyplot as plt
         import seaborn as sns
         import shap
 
-        fig = plt.figure(layout='constrained',figsize=(8,6))
+        fig, axes = plt.subplots(2,1, constrained_layout = True)
+        sns.set_theme(font_scale=1.5)
+        sns.barplot(data=feature_importance, x='FI', y=feature_importance.index,
+                     color='#8b76f3',width=0.5, ax=axes[0])
+        shap.plots.beeswarm(shap_values,show=False, color=plt.get_cmap("cool"),
+                            plot_size=None, ax=axes[1])
+        axes[0].set_xlabel("Feature Importance",size=13)
+        axes[0].set_ylabel(None)
+        axes[0].tick_params(axis='y',labelsize=13)
+        #titles = ['veg','yard','bird','birdde']
+        #axes[1].set_yticks(titles, weight='bold',size=14)
+        #plt.subplots_adjust()
+        #fig = plt.figure(figsize=(6,4),dpi=600)
+
         #FI plot
-        # ax = fig.add_subplot(111) # changed to 1 for now, removing subplots for now too
-        sns.barplot(data=feature_importance, x='FI', y=feature_importance.index, 
-                    color='#8b76f3',width=0.5)
-        plt.suptitle(title,x=0.56,fontsize=14,fontweight='semibold')
-        plt.yticks(fontsize=14)
-        plt.ylabel('')
-        plt.xlabel('Feature Importance', fontsize=14,x=0.45)
-        plt.text(x=-0.12,y=-0.30,s = f'R2 = {r2}')
+        # ax = fig.add_subplot(211, xlabel="Feature Importance") # changed to 1 for now, removing subplots for now too
+        # sns.barplot(data=feature_importance, x='FI', y=feature_importance.index,
+        #             color='#8b76f3',width=0.5)
+        # #plt.suptitle(title,x=0.35,fontsize=14,fontweight='semibold')
+        # plt.yticks(fontsize=14)
+        # plt.ylabel('')
+        # plt.xlabel('Feature Importance', fontsize=14,x=0.45)
+        # print('R2=', r2)
+        # #plt.text(x=0.9,y=-0.6,s = f'R2 = {r2}', fontsize=10)
         # #SHAP plot
         # ax = fig.add_subplot(212)
         # shap.plots.beeswarm(shap_values,show=False, color=plt.get_cmap("cool"),
-        #                     plot_size=None,ax=ax)
-        # plt.xlabel('SHAP',x=0.45)
+        #                     plot_size=None)
+        # # shap.plots.violin(shap_values, plot_type="layered_violin", cmap="cool",
+        # #                   plot_size=None)
+        # #ax.set_xlabel('SHAP',x=0.45)
         # plt.show()
         return fig
 
@@ -261,13 +276,12 @@ class Predictions:
         #          'yard-bird-estimate', 'habitat']])
         # Y = pd.DataFrame(data_y[['veg-changes']])
         # to get the # of years you want it's 5 * # of years columns w/o avg-neighbor
-        # make Y explicit by name - just habitat, or the whole model?
-        X = data.iloc[0:,train_start:train_end] # trying to remove habitat data from X
+        X = data.iloc[0:,train_start:train_end]
         # r2 = 97 @ 20 years of training
         X = X[X.columns.drop(list(X.filter(regex='habitat')))]
         Y = data[pred]
 
-        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = 0.2)#, stratify=Y)
+        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = 0.2)
         scaler = StandardScaler().fit(X_train)
         X_train = scaler.transform(X_train)
         X_test = scaler.transform(X_test)
@@ -330,7 +344,8 @@ class Stats:
         ax = fig.add_subplot(321)
         x = [cluster0['vegetation-volume'], cluster1['vegetation-volume']]
         plt.title('vegetation-volume')
-        ax.text(x=0, y=0,s= f'p = {p_val}')
+        
+        ax.text(x=0, y=0, s= p_val)
         plt.boxplot(x, labels = ["NN","EoE"])
 
         print('habitat')
@@ -342,7 +357,8 @@ class Stats:
         ax = fig.add_subplot(322)
         x = [cluster0['habitat'], cluster1['habitat']]
         plt.title('habitat')
-        ax.text(x=0, y=0,s= f'p = {p_val}')
+        
+        ax.text(x=0, y=0, s= p_val)
         plt.boxplot(x, labels = ["NN","EoE"])
 
         print('bird-density')
@@ -354,7 +370,8 @@ class Stats:
         ax = fig.add_subplot(323)
         x = [cluster0['bird-density'], cluster1['bird-density']]
         plt.title('bird-density')
-        ax.text(x=0, y=0,s= f'p = {p_val}')
+        
+        ax.text(x=0, y=0, s= p_val)
         plt.boxplot(x, labels = ["NN","EoE"])
 
         print('bird-love')
@@ -366,7 +383,9 @@ class Stats:
         ax = fig.add_subplot(324)
         x = [cluster0['bird-love'], cluster1['bird-love']]
         plt.title('bird-love')
-        ax.text(x=0, y=0,s= f'p = {p_val}')
+        
+        ax.text(x=0, y=0, s= p_val)
+
         plt.boxplot(x, labels = ["NN","EoE"])
 
         print('yard-bird-estimate')
@@ -378,7 +397,9 @@ class Stats:
         ax = fig.add_subplot(325)
         x = [cluster0['yard-bird-estimate'], cluster1['yard-bird-estimate']]
         plt.title('yard-bird-estimate')
-        ax.text(x=0, y=0,s= f'p = {p_val}')
+
+        ax.text(x=0, y=0, s= p_val)
+
         plt.boxplot(x, labels = ["NN","EoE"])
 
         print('avg-neighbor-richness')
@@ -390,5 +411,6 @@ class Stats:
         ax = fig.add_subplot(326)
         x = [cluster0['avg-neighbor-richness'], cluster1['avg-neighbor-richness']]
         plt.title('avg-neighbor-richness')
-        ax.text(x=0.5, y=0.5,s= p_val)
+        ax.text(x=0, y=0, s= p_val)
         plt.boxplot(x, labels = ["NN","EoE"])
+        return plt.show()
