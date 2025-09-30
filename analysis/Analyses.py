@@ -184,39 +184,25 @@ class Plots:
         import seaborn as sns
         import shap
 
-        fig, axes = plt.subplots(2,1, constrained_layout = True)
-        sns.set_theme(font_scale=1.5)
-        sns.barplot(data=feature_importance, x='FI', y=feature_importance.index,
-                     color='#8b76f3',width=0.5, ax=axes[0])
-        shap.plots.beeswarm(shap_values,show=False, color=plt.get_cmap("cool"),
-                            plot_size=None, ax=axes[1])
-        axes[0].set_xlabel("Feature Importance",size=13)
-        axes[0].set_ylabel(None)
-        axes[0].tick_params(axis='y',labelsize=13)
-        #titles = ['veg','yard','bird','birdde']
-        #axes[1].set_yticks(titles, weight='bold',size=14)
-        #plt.subplots_adjust()
-        #fig = plt.figure(figsize=(6,4),dpi=600)
-
-        #FI plot
-        # ax = fig.add_subplot(211, xlabel="Feature Importance") # changed to 1 for now, removing subplots for now too
+        ## combo plot
+        # fig, axes = plt.subplots(2,1, constrained_layout = True)
+        # sns.set_theme(font_scale=1.5)
         # sns.barplot(data=feature_importance, x='FI', y=feature_importance.index,
-        #             color='#8b76f3',width=0.5)
-        # #plt.suptitle(title,x=0.35,fontsize=14,fontweight='semibold')
-        # plt.yticks(fontsize=14)
-        # plt.ylabel('')
-        # plt.xlabel('Feature Importance', fontsize=14,x=0.45)
-        # print('R2=', r2)
-        # #plt.text(x=0.9,y=-0.6,s = f'R2 = {r2}', fontsize=10)
-        # #SHAP plot
-        # ax = fig.add_subplot(212)
+        #              color='#8b76f3',width=0.5, ax=axes[0])
         # shap.plots.beeswarm(shap_values,show=False, color=plt.get_cmap("cool"),
-        #                     plot_size=None)
-        # # shap.plots.violin(shap_values, plot_type="layered_violin", cmap="cool",
-        # #                   plot_size=None)
-        # #ax.set_xlabel('SHAP',x=0.45)
-        # plt.show()
-        return fig
+        #                     plot_size=None, ax=axes[1])
+        # axes[0].set_xlabel("Feature Importance",size=13)
+        # axes[0].set_ylabel(None)
+        # axes[0].tick_params(axis='y',labelsize=13)
+        ## single SHAP plot
+        #SHAP plot
+        fig = plt.figure()
+        ax = fig.add_subplot(figsize=(4,3), dpi=600)
+        shap.plots.beeswarm(shap_values,show=False, color=plt.get_cmap("cool"),
+                            plot_size=None)
+        ax.set_xlabel('SHAP',x=0.45)
+        plt.show()
+        return ax
 
 class Predictions:
     def xgBoost_KMeans(datax,datay):
