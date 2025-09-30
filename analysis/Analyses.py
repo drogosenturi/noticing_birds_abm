@@ -197,11 +197,16 @@ class Plots:
         ## single SHAP plot
         #SHAP plot
         fig = plt.figure()
-        ax = fig.add_subplot(figsize=(4,3), dpi=600)
+        ax = fig.add_subplot()
         shap.plots.beeswarm(shap_values,show=False, color=plt.get_cmap("cool"),
                             plot_size=None)
         ax.set_xlabel('SHAP',x=0.45)
-        plt.show()
+        plt.savefig("plots/final_plots/longitudinal/final.png", bbox_inches='tight',dpi=600)
+        plt.close()
+
+        fig1 = plt.figure()
+        ax1 = fig1.add_subplot()
+        shap.plots.scatter(shap_values[:,"vegetation-volume"])
         return ax
 
 class Predictions:
