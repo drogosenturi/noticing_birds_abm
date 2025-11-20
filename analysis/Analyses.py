@@ -59,7 +59,7 @@ class Clustering:
         # plot
         fig = plt.figure()
         fig, axes = plt.subplots(nrows = 1,ncols=1,figsize=(3,4),dpi=500)
-        tree.plot_tree(clf, feature_names=X.columns.values, filled=True)
+        tree.plot_tree(clf, feature_names=X.columns.values, filled=True, proportion=True, rounded=True)
         plt.show()
         return habitat_threshold
     
@@ -133,7 +133,7 @@ class DimensionalityReduction:
     def tSNE(data, data_scaled):
         print('you should use standard scaled data')
         from sklearn.manifold import TSNE
-        tsne = TSNE(perplexity=35).fit_transform(data_scaled)
+        tsne = TSNE(perplexity=25).fit_transform(data_scaled)
         print(tsne)
         data['tsne1'] = tsne[:,0]
         data['tsne2'] = tsne[:,1]
@@ -196,18 +196,22 @@ class Plots:
         # axes[0].tick_params(axis='y',labelsize=13)
         ## single SHAP plot
         #SHAP plot
-        fig = plt.figure()
-        ax = fig.add_subplot()
         shap.plots.beeswarm(shap_values,show=False, color=plt.get_cmap("cool"),
                             plot_size=None)
-        ax.set_xlabel('SHAP',x=0.45)
+        plt.xlabel('SHAP',x=0.45)
         plt.savefig("plots/final_plots/longitudinal/final.png", bbox_inches='tight',dpi=600)
         plt.close()
 
-        fig1 = plt.figure()
-        ax1 = fig1.add_subplot()
         shap.plots.scatter(shap_values[:,"vegetation-volume"])
-        return ax
+        # overwrites my plot with a blank plot every single time.
+        #plt.savefig("plots/final_plots/longitudinal/final_scatter.png", bbox_inches='tight',dpi=600)
+        plt.close()
+
+        fig2 = plt.figure()
+        shap.plots.bar(shap_values)
+        fig2.savefig("plots/final_plots/longitudinal/final_shapbar.png", bbox_inches='tight',dpi=600)
+        plt.close()
+        return
 
 class Predictions:
     def xgBoost_KMeans(datax,datay):
@@ -299,21 +303,6 @@ class Predictions:
         shap_values = explainer(X)
         return r2, mae, feature_importance, shap_values
     
-    # def xgBoost_long(data):
-    #     from xgboost import XGBRegressor
-    #     from sklearn.model_selection import train_test_split
-    #     from sklearn.model_selection import cross_val_score
-    #     from sklearn.preprocessing import LabelEncoder
-    #     from sklearn.preprocessing import StandardScaler
-    #     from sklearn import metrics
-    #     import pandas as pd
-    #     import shap
-
-    #     # to get the # of years you want it's 7 * # of years columns
-    #     # make Y explicit by name - just habitat, or the whole model?
-    #     X = data.iloc[0:,0:140]
-    #     Y = data["habitat59"]
-
 class Stats:
     def tTest(data):
         import pandas as pd
@@ -323,8 +312,9 @@ class Stats:
 
         cluster0 = data.loc[data['labels'] == 0]
         cluster1 = data.loc[data['labels'] == 1]
-        cluster0 = cluster0.sample(1000)
-        cluster1 = cluster1.sample(1000)
+        # Emily said to remove the samples.
+        # cluster0 = cluster0.sample(1000)
+        # cluster1 = cluster1.sample(1000)
         fig = plt.figure(constrained_layout = True, figsize=(8,6))
 
         print('vegetation volume')
@@ -334,10 +324,10 @@ class Stats:
             p_val = "***"
         ax = fig.add_subplot(321)
         x = [cluster0['vegetation-volume'], cluster1['vegetation-volume']]
-        plt.title('vegetation-volume')
+        plt.title('vegetation volume')
         
-        ax.text(x=0, y=0, s= p_val)
-        plt.boxplot(x, labels = ["NN","EoE"])
+        ax.text(x=0.55, y=0, s= p_val)
+        plt.boxplot(x, labels = ["0","1"])
 
         print('habitat')
         t_stat, p_val = mannwhitneyu(cluster0['habitat'], cluster1['habitat'])
@@ -349,8 +339,8 @@ class Stats:
         x = [cluster0['habitat'], cluster1['habitat']]
         plt.title('habitat')
         
-        ax.text(x=0, y=0, s= p_val)
-        plt.boxplot(x, labels = ["NN","EoE"])
+        ax.text(x=0.55, y=0, s= p_val)
+        plt.boxplot(x, labels = ["0","1"])
 
         print('bird-density')
         t_stat, p_val = mannwhitneyu(cluster0['bird-density'], cluster1['bird-density'])
@@ -360,10 +350,10 @@ class Stats:
             p_val = "***"
         ax = fig.add_subplot(323)
         x = [cluster0['bird-density'], cluster1['bird-density']]
-        plt.title('bird-density')
+        plt.title('bird density')
         
-        ax.text(x=0, y=0, s= p_val)
-        plt.boxplot(x, labels = ["NN","EoE"])
+        ax.text(x=0.55, y=0, s= p_val)
+        plt.boxplot(x, labels = ["0","1"])
 
         print('bird-love')
         t_stat, p_val = mannwhitneyu(cluster0['bird-love'], cluster1['bird-love'])
@@ -373,11 +363,10 @@ class Stats:
             p_val = "***"
         ax = fig.add_subplot(324)
         x = [cluster0['bird-love'], cluster1['bird-love']]
-        plt.title('bird-love')
-        
-        ax.text(x=0, y=0, s= p_val)
-
-        plt.boxplot(x, labels = ["NN","EoE"])
+        plt.title('bird love')
+       
+        ax.text(x=0.55, y=0, s= p_val)
+        plt.boxplot(x, labels = ["0","1"])
 
         print('yard-bird-estimate')
         t_stat, p_val = mannwhitneyu(cluster0['yard-bird-estimate'], cluster1['yard-bird-estimate'])
@@ -387,13 +376,12 @@ class Stats:
             p_val = "***"
         ax = fig.add_subplot(325)
         x = [cluster0['yard-bird-estimate'], cluster1['yard-bird-estimate']]
-        plt.title('yard-bird-estimate')
+        plt.title('bird estimate')
 
-        ax.text(x=0, y=0, s= p_val)
+        ax.text(x=0.55, y=0, s= p_val)
+        plt.boxplot(x, labels = ["0","1"])
 
-        plt.boxplot(x, labels = ["NN","EoE"])
-
-        print('avg-neighbor-richness')
+        print('neighbor vegetation')
         t_stat, p_val = mannwhitneyu(cluster0['avg-neighbor-richness'], cluster1['avg-neighbor-richness'])
         
         print(f'U: {t_stat}', f'p-val: {p_val}\n')
@@ -401,7 +389,13 @@ class Stats:
             p_val = "***"
         ax = fig.add_subplot(326)
         x = [cluster0['avg-neighbor-richness'], cluster1['avg-neighbor-richness']]
-        plt.title('avg-neighbor-richness')
-        ax.text(x=0, y=0, s= p_val)
-        plt.boxplot(x, labels = ["NN","EoE"])
+        plt.title('neighbor vegetation')
+        
+        ax.text(x=0.55, y=0, s= p_val)
+        plt.boxplot(x, labels = ["0","1"])
+        
+        # super axes titles
+        fig.supxlabel('Cluster')
+        fig.supylabel('U value')
+
         return plt.show()

@@ -54,9 +54,10 @@ for f in listdir(path):
         data_list.append(path + f)
 
 #### clusters and decision tree ####
-for i in data_list:
-    runCART(i)
+# for i in data_list:
+#     runCART(i)
+# runCART(data_list[0])
 
 ###### Mann-whitney ######
-#data = runStats(data_list[5])
+data = runStats(data_list[5])
 

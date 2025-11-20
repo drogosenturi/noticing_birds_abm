@@ -44,7 +44,7 @@ yard-bird-est 943388      1.49e-261
 avg-neighbor  999193      0.0
 _________________________________
 XGBoost + SHAP
-R2    |   years trained   | year predicted
-------------------------------------------
-0.97      40 to 44 (incl.)  habitat @ yr 90
+R2    | MAE  |   years X        | year Y
+---------------------------------------------------
+0.92    6.14   20 to 22 (incl.)  habitat @ yr 80
 

@@ -35,11 +35,12 @@ for file in data_list:
     n += 1
 
 # to get the # of years you want it's 5 * # of years
-start_train = 200 # year 40
-end_train = 225 # year 45
-predict = "habitat90"
+start_train = 100 # year 20
+end_train = 125 # year 45
+predict = "habitat80"
 r2, mae, feature_importance, shap_values = Predictions.xgBoost_long(main, start_train, end_train, predict)
-
+# print results to console
+print(f"R^2 = {r2}\nMAE = {mae}")
 # combine the feature importance of each predictor
 summed_FI = pd.DataFrame({"FI": 0}, index=['vegetation-volume','bird-density','bird-love',
                  'yard-bird-estimate']) # removed avg-neighbor-richness and habitat for now
